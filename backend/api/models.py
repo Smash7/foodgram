@@ -1,10 +1,10 @@
 from django.contrib.auth import get_user_model
-from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.db import models
 
 
 class FoodgramUser(AbstractUser):
-    REQUIRED_FIELDS = ('email', 'first_name', 'last_name')
+    REQUIRED_FIELDS = ['email', 'first_name', 'last_name',]
     email = models.EmailField(
         unique=True,
         verbose_name='Email',
@@ -24,11 +24,12 @@ class FoodgramUser(AbstractUser):
         null=False
     )
     avatar = models.ImageField(
-        upload_to='avatars/',
-        blank=True,
         null=True,
-        verbose_name='Аватар'
-    )
+        default=None,
+        blank=True,
+        upload_to='avatars/',
+        verbose_name='Аватар')
+
     class Meta(AbstractUser.Meta):
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
@@ -36,6 +37,7 @@ class FoodgramUser(AbstractUser):
 
     def __str__(self):
         return self.username
+
 
 class Subscription(models.Model):
     user = models.ForeignKey(
@@ -63,3 +65,76 @@ class Subscription(models.Model):
 
     def __str__(self):
         return f'{self.user} подписан на {self.author}'
+
+
+class Ingredient(models.Model):
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Название ингредиента',
+        blank=False,
+        null=False
+    )
+    dimension = models.CharField(
+        max_length=200,
+        verbose_name='Единица измерения',
+        blank=False,
+        null=False
+    )
+
+
+class Tag(models.Model):
+    name = models.CharField(
+        max_length=200,
+        verbose_name='Название тэга',
+        blank=False,
+        null=False
+    )
+    slug = models.SlugField(
+        max_length=200,
+        unique=True,
+        verbose_name='Slug',
+        blank=False,
+        null=False
+    )
+
+
+class Recipe(models.Model):
+    author = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        related_name='recipes',
+        verbose_name='Автор',
+        blank=False,
+        null=False
+    )
+    title = models.CharField(
+        max_length=200,
+        verbose_name='Название рецепта',
+        blank=False,
+        null=False
+    )
+    image = models.ImageField(
+        upload_to='recipes/',
+        blank=False,
+        null=False,
+        verbose_name='Фото блюда'
+    )
+    description = models.TextField(
+        verbose_name='Описание',
+        blank=False,
+        null=False
+    )
+    ingredients = models.ManyToManyField(
+        Ingredient,
+        verbose_name='Ингредиенты'
+    )
+    tags = models.ManyToManyField(
+        Tag,
+        verbose_name='Тэги',
+        blank=True
+    )
+    cooking_time = models.PositiveIntegerField(
+        verbose_name='Время приготовления',
+        blank=False,
+        null=False
+    )
