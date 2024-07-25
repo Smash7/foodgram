@@ -2,9 +2,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-
 class FoodgramUser(AbstractUser):
-    REQUIRED_FIELDS = ['email', 'first_name', 'last_name',]
+    REQUIRED_FIELDS = ['email', 'first_name', 'last_name']
     email = models.EmailField(
         unique=True,
         verbose_name='Email',
@@ -28,7 +27,8 @@ class FoodgramUser(AbstractUser):
         default=None,
         blank=True,
         upload_to='avatars/',
-        verbose_name='Аватар')
+        verbose_name='Аватар'
+    )
 
     class Meta(AbstractUser.Meta):
         verbose_name = 'Пользователь'
@@ -68,13 +68,13 @@ class Subscription(models.Model):
 
 
 class Ingredient(models.Model):
-    title = models.CharField(
+    name = models.CharField(
         max_length=200,
         verbose_name='Название ингредиента',
         blank=False,
         null=False
     )
-    dimension = models.CharField(
+    measurement_unit = models.CharField(
         max_length=200,
         verbose_name='Единица измерения',
         blank=False,
@@ -138,3 +138,73 @@ class Recipe(models.Model):
         blank=False,
         null=False
     )
+
+    def is_favorited(self, user):
+        return self.favorited_by.filter(user=user).exists()
+
+    def is_in_shopping_cart(self, user):
+        return self.in_shopping_cart.filter(user=user).exists()
+
+
+class FavoriteRecipe(models.Model):
+    user = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        related_name='favorites',
+        verbose_name='Пользователь',
+        blank=False,
+        null=False
+    )
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='favorited_by',
+        verbose_name='Рецепт',
+        blank=False,
+        null=False
+    )
+
+    class Meta:
+        verbose_name = 'Избранный рецепт'
+        verbose_name_plural = 'Избранные рецепты'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_favorite_recipe'
+            )
+        ]
+
+    def __str__(self):
+        return f'{self.user} добавил в избранное рецепт "{self.recipe}"'
+
+
+class ShoppingCart(models.Model):
+    user = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        related_name='shopping_cart',
+        verbose_name='Пользователь',
+        blank=False,
+        null=False
+    )
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='in_shopping_cart',
+        verbose_name='Рецепт',
+        blank=False,
+        null=False
+    )
+
+    class Meta:
+        verbose_name = 'Рецепт в корзине'
+        verbose_name_plural = 'Рецепты в корзине'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_shopping_cart'
+            )
+        ]
+
+    def __str__(self):
+        return f'{self.user} добавил в корзину рецепт "{self.recipe}"'

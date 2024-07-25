@@ -5,7 +5,7 @@ from django.core.files.base import ContentFile
 from drf_extra_fields.fields import Base64ImageField as DrfBase64ImageField
 from rest_framework import serializers
 
-from .models import Subscription, Tag
+from .models import Subscription, Tag, Recipe, FavoriteRecipe, ShoppingCart, Ingredient
 from djoser.serializers import (
     UserCreateSerializer as DjoserUserCreateSerializer,
     UserSerializer as DjoserUserSerializer
@@ -75,4 +75,57 @@ class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ('id', 'name', 'slug')
+        read_only_fields = ('slug', 'name')
 
+
+class IngredientSerializer(serializers.ModelSerializer):
+    amount = serializers.IntegerField(source='measurement_unit')
+    class Meta:
+        model = Ingredient
+        fields = ('id', 'name', 'amount')
+        read_only_fields = ('name',)
+
+
+
+
+class RecipeSerializer(serializers.ModelSerializer):
+    tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True)
+    is_favorited = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
+    author = ProfileSerializer(read_only=True)
+    image = Base64ImageField(required=False, allow_null=True)
+    ingredients = IngredientSerializer(many=True)
+    text = serializers.CharField(source='description')
+    name = serializers.CharField(source='title')
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'ingredients', 'tags', 'image', 'name', 'text',
+            'cooking_time', 'is_favorited', 'is_in_shopping_cart',
+            'author', 'id'
+        )
+        read_only_fields = ('is_favorited', 'is_in_shopping_cart', 'id', 'author')
+
+    def create(self, validated_data):
+        author = self.context['request'].user
+        recipe = Recipe.objects.create(author=author, **validated_data)
+        super().create(**validated_data)
+
+    def get_is_favorited(self, obj):
+        request = self.context.get('request', None)
+        if request and request.user.is_authenticated:
+            return obj.is_favorited(request.user)
+        return False
+
+    def get_is_in_shopping_cart(self, obj):
+        request = self.context.get('request', None)
+        if request and request.user.is_authenticated:
+            return obj.is_in_shopping_cart(request.user)
+        return False
+
+class ShoppingCartSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ShoppingCart
+        fields = ('id', 'user', 'recipe')
+        read_only_fields = ('user',)
