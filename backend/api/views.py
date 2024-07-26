@@ -8,7 +8,6 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 
-
 from .models import Tag, Recipe, Ingredient, ShoppingCart
 from .pagination import LimitPagination
 from .serializers import AvatarSerializer, ProfileSerializer, TagSerializer, RecipeSerializer, IngredientSerializer, ShoppingCartSerializer
@@ -18,12 +17,14 @@ User = get_user_model()
 
 
 class ProfileViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all().prefetch_related('follower', 'following')
+    queryset = User.objects.all().select_related('avatar')
     serializer_class = ProfileSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
 
 class AvatarUploadView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def put(self, request, *args, **kwargs):
         serializer = AvatarSerializer(request.user, data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -41,9 +42,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     ordering_fields = ('title', 'cooking_time', 'author')
     ordering = ('title',)
     filterset_fields = ('tags__slug', 'author__username', 'is_favorited', 'is_in_shopping_cart')
-
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -76,11 +74,11 @@ class ShoppingCartViewSet(viewsets.ModelViewSet):
         shopping_cart = ShoppingCart.objects.filter(user=request.user)
         shopping_list = {}
         for item in shopping_cart:
-            for ingredient in item.recipe.ingredients.all():
-                if ingredient.name in shopping_list:
-                    shopping_list[ingredient.name] += ingredient.measurement_unit
+            for ingredient in item.recipe.recipeingredient_set.all():
+                if ingredient.ingredient.name in shopping_list:
+                    shopping_list[ingredient.ingredient.name] += ingredient.amount
                 else:
-                    shopping_list[ingredient.name] = ingredient.measurement_unit
+                    shopping_list[ingredient.ingredient.name] = ingredient.amount
 
         shopping_list_text = '\n'.join([f'{name} - {amount}' for name, amount in shopping_list.items()])
 
