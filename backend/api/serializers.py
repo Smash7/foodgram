@@ -128,6 +128,19 @@ class RecipeSerializer(serializers.ModelSerializer):
 
         return recipe
 
+    def update(self, instance, validated_data):
+        instance.title = validated_data.get('title', instance.title)
+        instance.description = validated_data.get('description', instance.description)
+        instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
+        instance.image = validated_data.get('image', instance.image)
+        instance.save()
+        instance.tags.set(validated_data.get('tags', instance.tags.all()))
+        instance.recipeingredient_set.all().delete()
+        for ingredient_data in validated_data.get('recipeingredient_set', []):
+            ingredient = ingredient_data.pop('id')
+            RecipeIngredient.objects.create(recipe=instance, ingredient=ingredient, **ingredient_data)
+        return instance
+
     def get_is_favorited(self, obj):
         request = self.context.get('request', None)
         if request and request.user.is_authenticated:
