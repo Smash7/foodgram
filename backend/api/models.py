@@ -85,16 +85,12 @@ class Ingredient(models.Model):
 class Tag(models.Model):
     name = models.CharField(
         max_length=200,
-        verbose_name='Название тэга',
-        blank=False,
-        null=False
+        verbose_name='Название тэга'
     )
     slug = models.SlugField(
         max_length=200,
         unique=True,
-        verbose_name='Slug',
-        blank=False,
-        null=False
+        verbose_name='Slug'
     )
 
 
@@ -103,9 +99,7 @@ class Recipe(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='recipes',
-        verbose_name='Автор',
-        blank=False,
-        null=False
+        verbose_name='Автор'
     )
     title = models.CharField(
         max_length=200,

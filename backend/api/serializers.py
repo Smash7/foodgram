@@ -87,6 +87,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecipeIngredient
         fields = ('id', 'name', 'measurement_unit', 'amount')
+        read_only_fields = ('name', 'measurement_unit')
 
 
 class RecipeSerializer(serializers.ModelSerializer):
@@ -102,11 +103,15 @@ class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = (
-            'ingredients', 'tags', 'image', 'name', 'text',
-            'cooking_time', 'is_favorited', 'is_in_shopping_cart',
-            'author', 'id'
+            'id', 'tags', 'author', 'ingredients', 'is_favorited',
+            'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
         )
         read_only_fields = ('is_favorited', 'is_in_shopping_cart', 'id', 'author')
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['tags'] = TagSerializer(instance.tags.all(), many=True).data
+        return data
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop('recipeingredient_set')
