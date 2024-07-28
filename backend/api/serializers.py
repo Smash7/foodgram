@@ -159,3 +159,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         model = ShoppingCart
         fields = ('id', 'user', 'recipe')
         read_only_fields = ('user',)
+
+
+class ShortLinkSerializer(serializers.Serializer):
+    short_link = serializers.URLField()

@@ -7,10 +7,13 @@ from rest_framework.filters import OrderingFilter
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
+import requests
 
 from .models import Tag, Recipe, Ingredient, ShoppingCart
+from django.conf import settings
 from .pagination import LimitPagination
-from .serializers import AvatarSerializer, ProfileSerializer, TagSerializer, RecipeSerializer, IngredientSerializer, ShoppingCartSerializer
+from .serializers import AvatarSerializer, ProfileSerializer, TagSerializer, RecipeSerializer, IngredientSerializer, ShoppingCartSerializer, ShortLinkSerializer
 from .filters import RecipeFilter
 
 User = get_user_model()
@@ -42,6 +45,23 @@ class RecipeViewSet(viewsets.ModelViewSet):
     ordering_fields = ('title', 'cooking_time', 'author')
     ordering = ('title',)
     filterset_fields = ('tags__slug', 'author__username', 'is_favorited', 'is_in_shopping_cart')
+
+    @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny], url_path='get-link')
+    def get_link(self, request, pk=None):
+        recipe = get_object_or_404(Recipe, pk=pk)
+        original_url = f'https://{settings.ALLOWED_HOSTS[0]}/recipes/{recipe.id}/'
+        short_url = self.get_short_link(original_url)
+        if short_url:
+            serializer = ShortLinkSerializer({'short_link': short_url})
+            return Response(serializer.data)
+        return Response({'error': 'Could not generate short link'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def get_short_link(self, url):
+        clck_url = f'https://clck.ru/--?url={url}'
+        response = requests.get(clck_url)
+        if response.status_code == 200:
+            return response.text
+        return None
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
