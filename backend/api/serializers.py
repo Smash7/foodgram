@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.core.files.base import ContentFile
 from rest_framework import serializers
+from rest_framework.exceptions import NotAuthenticated
 from drf_extra_fields.fields import Base64ImageField as DrfBase64ImageField
 
 from .models import Subscription, Tag, Recipe, FavoriteRecipe, ShoppingCart, Ingredient, RecipeIngredient
@@ -30,6 +31,12 @@ class ProfileSerializer(DjoserUserSerializer):
         if request and request.user.is_authenticated:
             return Subscription.objects.filter(user=request.user, author=obj).exists()
         return False
+
+    def to_representation(self, instance):
+        request = self.context.get('request', None)
+        if request and not request.user.is_authenticated and request.path == '/api/users/me/':
+            raise NotAuthenticated('Authentication credentials were not provided.')
+        return super().to_representation(instance)
 
     class Meta(DjoserUserSerializer.Meta):
         model = User
