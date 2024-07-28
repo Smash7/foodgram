@@ -46,6 +46,41 @@ class RecipeViewSet(viewsets.ModelViewSet):
     ordering = ('title',)
     filterset_fields = ('tags__slug', 'author__username', 'is_favorited', 'is_in_shopping_cart')
 
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='download_shopping_cart', url_name='download_shopping_cart')
+    def download_shopping_cart(self, request):
+        shopping_cart = ShoppingCart.objects.filter(user=request.user)
+        shopping_list = {}
+        for item in shopping_cart:
+            for ingredient in item.recipe.recipeingredient_set.all():
+                if ingredient.ingredient.name in shopping_list:
+                    shopping_list[ingredient.ingredient.name] += ingredient.amount
+                else:
+                    shopping_list[ingredient.ingredient.name] = ingredient.amount
+
+        shopping_list_text = '\n'.join([f'- {name} -- {amount}' for name, amount in shopping_list.items()])
+        response = Response(shopping_list_text, content_type='text/plain')
+        response['Content-Disposition'] = 'attachment; filename="shopping_list.txt"'
+        return response
+
+
+    @action(detail=True, methods=['get', 'post', 'delete'], permission_classes=[IsAuthenticated], url_path='shopping_cart', url_name='shopping_cart')
+    def shopping_cart(self, request, pk=None):
+        if request.method == 'GET':
+            recipe = get_object_or_404(Recipe, pk=pk)
+            is_in_cart = ShoppingCart.objects.filter(user=request.user, recipe=recipe).exists()
+            return Response({'is_in_cart': is_in_cart})
+        elif request.method == 'POST':
+            recipe = get_object_or_404(Recipe, pk=pk)
+            ShoppingCart.objects.get_or_create(user=request.user, recipe=recipe)
+            return Response(status=status.HTTP_201_CREATED)
+        elif request.method == 'DELETE':
+            recipe = get_object_or_404(Recipe, pk=pk)
+            ShoppingCart.objects.filter(user=request.user, recipe=recipe).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
     @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny], url_path='get-link')
     def get_link(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
