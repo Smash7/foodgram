@@ -10,10 +10,10 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 import requests
 
-from .models import Tag, Recipe, Ingredient, ShoppingCart, FavoriteRecipe
+from .models import Tag, Recipe, Ingredient, ShoppingCart, FavoriteRecipe, Subscription
 from django.conf import settings
 from .pagination import LimitPagination
-from .serializers import AvatarSerializer, ProfileSerializer, TagSerializer, RecipeSerializer, IngredientSerializer, ShoppingCartSerializer, ShortLinkSerializer
+from .serializers import AvatarSerializer, ProfileSerializer, TagSerializer, RecipeSerializer, IngredientSerializer, ShoppingCartSerializer, ShortLinkSerializer, SubscriptionSerializer
 from .filters import RecipeFilter
 
 User = get_user_model()
@@ -23,6 +23,44 @@ class ProfileViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().select_related('avatar')
     serializer_class = ProfileSerializer
     permission_classes = (permissions.IsAuthenticated,)
+
+class SubscriptionViewSet(viewsets.ModelViewSet):
+    serializer_class = SubscriptionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return User.objects.filter(following__user=self.request.user)
+
+    @action(detail=False, methods=['get'])
+    def list_subscriptions(self, request):
+        subscriptions = self.get_queryset()
+        page = self.paginate_queryset(subscriptions)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(subscriptions, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def subscribe(self, request, id=None):
+        author = get_object_or_404(User, id=id)
+        if Subscription.objects.filter(user=request.user, author=author).exists():
+            return Response({'detail': 'You are already subscribed to this user.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        subscription = Subscription.objects.create(user=request.user, author=author)
+        serializer = self.get_serializer(subscription.author)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['delete'])
+    def unsubscribe(self, request, id=None):
+        author = get_object_or_404(User, id=id)
+        subscription = Subscription.objects.filter(user=request.user, author=author).first()
+        if not subscription:
+            return Response({'detail': 'You are not subscribed to this user.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        subscription.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class AvatarUploadView(APIView):

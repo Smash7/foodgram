@@ -35,7 +35,6 @@ class ProfileSerializer(DjoserUserSerializer):
         fields = ('email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed', 'avatar')
         read_only_fields = ('is_subscribed', 'avatar')
 
-
 class Base64ImageField(serializers.ImageField):
     def to_internal_value(self, data):
         if isinstance(data, str) and data.startswith('data:image'):
@@ -43,6 +42,38 @@ class Base64ImageField(serializers.ImageField):
             ext = format.split('/')[-1]
             data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
         return super().to_internal_value(data)
+
+class RecipeSimpleSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='title')
+    image = DrfBase64ImageField(use_url=True)
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time')
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    is_subscribed = serializers.SerializerMethodField()
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+    avatar = DrfBase64ImageField(max_length=None, use_url=True, required=False)
+
+    class Meta:
+        model = User
+        fields = ('email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed', 'recipes', 'recipes_count', 'avatar')
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return Subscription.objects.filter(user=request.user, author=obj).exists()
+        return False
+
+    def get_recipes(self, obj):
+        request = self.context.get('request')
+        recipes = obj.recipes.all()  # You can add filters or pagination here if needed
+        return RecipeSimpleSerializer(recipes, many=True, context={'request': request}).data
+
+    def get_recipes_count(self, obj):
+        return obj.recipes.count()
 
 
 class AvatarSerializer(serializers.ModelSerializer):
