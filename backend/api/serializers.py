@@ -103,20 +103,17 @@ class AvatarSerializer(serializers.ModelSerializer):
 
     def to_internal_value(self, data):
         if 'avatar' in data and isinstance(data['avatar'], str):
-            data['avatar'] = Base64ImageField().to_internal_value(data['avatar'])
+            data['avatar'] = Base64ImageField(required=True).to_internal_value(data['avatar'])
         return super().to_internal_value(data)
 
     def update(self, instance, validated_data):
         avatar = validated_data.pop('avatar', None)
         if avatar:
             instance.avatar = avatar
+        else:
+            raise serializers.ValidationError('avatar is required')
+
         return super().update(instance, validated_data)
-    #
-    #
-    # def update(self, instance, validated_data):
-    #     instance.avatar = validated_data.get('avatar', instance.avatar)
-    #     instance.save()
-    #     return instance
 
 
 class TagSerializer(serializers.ModelSerializer):
