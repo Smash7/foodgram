@@ -127,7 +127,10 @@ DJOSER = {
         'user': 'api.serializers.ProfileSerializer',
         'current_user': 'api.serializers.ProfileSerializer',
     },
-    'LOGIN_FIELD': 'email'
+    'LOGIN_FIELD': 'email',
+    'PERMISSIONS': {
+        'user': ['rest_framework.permissions.IsAuthenticatedOrReadOnly']
+    }
 }
 
 
