@@ -1,6 +1,7 @@
 import base64
 
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 from drf_extra_fields.fields import Base64ImageField as DrfBase64ImageField
@@ -77,22 +78,38 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
 
 class AvatarSerializer(serializers.ModelSerializer):
-    avatar = Base64ImageField(required=False, allow_null=True)
-    avatar_url = serializers.SerializerMethodField(read_only=True)
+    avatar = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ('avatar', 'avatar_url')
+        fields = ('avatar',)
 
-    def get_avatar_url(self, obj):
-        if obj.avatar:
-            return obj.avatar.url
+    def get_avatar(self, obj):
+        request = self.context.get('request')
+        if request is not None and obj.avatar and hasattr(obj.avatar, 'url'):
+            return request.build_absolute_uri(obj.avatar.url)
+        elif obj.avatar and hasattr(obj.avatar, 'url'):
+            domain = settings.DEFAULT_DOMAIN
+            protocol = settings.DEFAULT_PROTOCOL
+            return f"{protocol}://{domain}{obj.avatar.url}"
         return None
 
+    def to_internal_value(self, data):
+        if 'avatar' in data and isinstance(data['avatar'], str):
+            data['avatar'] = Base64ImageField().to_internal_value(data['avatar'])
+        return super().to_internal_value(data)
+
     def update(self, instance, validated_data):
-        instance.avatar = validated_data.get('avatar', instance.avatar)
-        instance.save()
-        return instance
+        avatar = validated_data.pop('avatar', None)
+        if avatar:
+            instance.avatar = avatar
+        return super().update(instance, validated_data)
+    #
+    #
+    # def update(self, instance, validated_data):
+    #     instance.avatar = validated_data.get('avatar', instance.avatar)
+    #     instance.save()
+    #     return instance
 
 
 class TagSerializer(serializers.ModelSerializer):

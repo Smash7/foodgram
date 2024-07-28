@@ -10,10 +10,14 @@ class FoodgramUserAdmin(admin.ModelAdmin):
     list_filter = ('id', 'username', 'email', 'first_name', 'last_name', 'is_staff', 'is_active')
     empty_value_display = '-пусто-'
     ordering = ('id',)
+    readonly_fields = ('avatar',)
     fieldsets = (
-        (None, {'fields': ('username', 'email', 'first_name', 'last_name', 'avatar')}),
-        ('Права доступа', {'fields': ('is_staff', 'is_active')}),
-        ('Подписки', {'fields': ('following',)}),
+        (None, {
+            'fields': ('username', 'email', 'first_name', 'last_name', 'avatar')
+        }),
+        ('Права доступа', {
+            'fields': ('is_staff', 'is_active')
+        }),
     )
 
 @admin.register(Tag)

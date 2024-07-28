@@ -18,6 +18,10 @@ APPEND_SLASH = False
 ALLOWED_HOSTS = ['foodgram.ugin.dev', 'localhost', '127.0.0.1']
 AUTH_USER_MODEL = 'api.FoodgramUser'
 
+DEFAULT_DOMAIN = 'foodgram.ugin.dev'
+
+DEFAULT_PROTOCOL = 'https'
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -129,7 +133,8 @@ DJOSER = {
     },
     'LOGIN_FIELD': 'email',
     'PERMISSIONS': {
-        'user': ['rest_framework.permissions.IsAuthenticatedOrReadOnly']
+        'user': ['rest_framework.permissions.IsAuthenticatedOrReadOnly'],
+        'user_list': ['rest_framework.permissions.AllowAny'],
     }
 }
 
