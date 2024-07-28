@@ -10,7 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 import requests
 
-from .models import Tag, Recipe, Ingredient, ShoppingCart
+from .models import Tag, Recipe, Ingredient, ShoppingCart, FavoriteRecipe
 from django.conf import settings
 from .pagination import LimitPagination
 from .serializers import AvatarSerializer, ProfileSerializer, TagSerializer, RecipeSerializer, IngredientSerializer, ShoppingCartSerializer, ShortLinkSerializer
@@ -46,6 +46,16 @@ class RecipeViewSet(viewsets.ModelViewSet):
     ordering = ('title',)
     filterset_fields = ('tags__slug', 'author__username', 'is_favorited', 'is_in_shopping_cart')
 
+
+    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated], url_path='favorite', url_name='favorite')
+    def favorite(self, request, pk=None):
+        recipe = get_object_or_404(Recipe, pk=pk)
+        if request.method == 'POST':
+            FavoriteRecipe.objects.get_or_create(user=request.user, recipe=recipe)
+            return Response(status=status.HTTP_201_CREATED)
+        elif request.method == 'DELETE':
+            FavoriteRecipe.objects.filter(user=request.user, recipe=recipe).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='download_shopping_cart', url_name='download_shopping_cart')
     def download_shopping_cart(self, request):
