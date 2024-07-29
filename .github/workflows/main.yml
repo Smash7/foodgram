@@ -43,7 +43,7 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          source: "docker-compose.yml,.env.example"
+          source: "infra/docker-compose.yml,infra/.env.example"
           target: "~/foodgram/"
       - name: Executing remote ssh commands to deploy
         uses: appleboy/ssh-action@master
@@ -53,6 +53,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
+            cd infra
             touch .env
             cat > .env <<EOF
             DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
