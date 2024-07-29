@@ -20,7 +20,7 @@ services:
       - frontend
       - backend
     ports:
-      - "80:80"
+      - "8800:80"
     networks:
       foodgram-network:
     volumes:
@@ -37,10 +37,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    environment:
-        POSTGRES_DB: foodgram_db
-        POSTGRES_USER: foodgram_user
-        POSTGRES_PASSWORD: foodgram_password
+    env_file:
+      - .env
   backend:
     build:
         context: ../backend

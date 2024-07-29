@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import FoodgramUser, Tag, Ingredient, Recipe
+from .models import FoodgramUser, Ingredient, Recipe, Tag
 
 
 @admin.register(FoodgramUser)
@@ -10,11 +10,16 @@ class FoodgramUserAdmin(admin.ModelAdmin):
     list_filter = ('id', 'username', 'email', 'first_name', 'last_name', 'is_staff', 'is_active')
     empty_value_display = '-пусто-'
     ordering = ('id',)
+    readonly_fields = ('avatar',)
     fieldsets = (
-        (None, {'fields': ('username', 'email', 'first_name', 'last_name', 'avatar')}),
-        ('Права доступа', {'fields': ('is_staff', 'is_active')}),
-        ('Подписки', {'fields': ('following',)}),
+        (None, {
+            'fields': ('username', 'email', 'first_name', 'last_name', 'avatar')
+        }),
+        ('Права доступа', {
+            'fields': ('is_staff', 'is_active')
+        }),
     )
+
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
@@ -23,6 +28,7 @@ class TagAdmin(admin.ModelAdmin):
     list_filter = ('id', 'name', 'slug')
     empty_value_display = '-пусто-'
     ordering = ('id',)
+
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
