@@ -35,7 +35,7 @@ jobs:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     needs: build_and_push_to_docker_hub
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Copy docker-compose.yml via ssh
         uses: appleboy/scp-action@master
         with:
@@ -43,7 +43,7 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
-          source: "docker-compose.yml,.env.example"
+          source: "infra/docker-compose.yml,infra/.env.example"
           target: "~/foodgram/"
       - name: Executing remote ssh commands to deploy
         uses: appleboy/ssh-action@master
