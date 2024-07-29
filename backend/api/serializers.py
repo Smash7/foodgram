@@ -1,16 +1,19 @@
 import base64
 
-from django.contrib.auth import get_user_model
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 from rest_framework.exceptions import NotAuthenticated
-from drf_extra_fields.fields import Base64ImageField as DrfBase64ImageField
 
-from .models import Subscription, Tag, Recipe, FavoriteRecipe, ShoppingCart, Ingredient, RecipeIngredient
 from djoser.serializers import (
     UserCreateSerializer as DjoserUserCreateSerializer,
     UserSerializer as DjoserUserSerializer
+)
+from drf_extra_fields.fields import Base64ImageField as DrfBase64ImageField
+
+from .models import (
+    FavoriteRecipe, Ingredient, Recipe, RecipeIngredient, ShoppingCart, Subscription, Tag
 )
 
 User = get_user_model()
@@ -43,6 +46,7 @@ class ProfileSerializer(DjoserUserSerializer):
         fields = ('email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed', 'avatar')
         read_only_fields = ('is_subscribed', 'avatar')
 
+
 class Base64ImageField(serializers.ImageField):
     def to_internal_value(self, data):
         if isinstance(data, str) and data.startswith('data:image'):
@@ -50,6 +54,10 @@ class Base64ImageField(serializers.ImageField):
             ext = format.split('/')[-1]
             data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
         return super().to_internal_value(data)
+
+    def to_representation(self, value):
+        return 'https://'+settings.ALLOWED_HOSTS[0]+value.url if value else None
+
 
 class RecipeSimpleSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='title')
@@ -59,6 +67,7 @@ class RecipeSimpleSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
 
+
 class SubscriptionSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
     recipes = serializers.SerializerMethodField()
@@ -67,7 +76,8 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed', 'recipes', 'recipes_count', 'avatar')
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',
+                  'is_subscribed', 'recipes', 'recipes_count', 'avatar')
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
@@ -90,35 +100,11 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
 
 class AvatarSerializer(serializers.ModelSerializer):
-    avatar = serializers.SerializerMethodField()
+    avatar = Base64ImageField()
 
     class Meta:
         model = User
         fields = ('avatar',)
-
-    def get_avatar(self, obj):
-        request = self.context.get('request')
-        if request is not None and obj.avatar and hasattr(obj.avatar, 'url'):
-            return request.build_absolute_uri(obj.avatar.url)
-        elif obj.avatar and hasattr(obj.avatar, 'url'):
-            domain = settings.DEFAULT_DOMAIN
-            protocol = settings.DEFAULT_PROTOCOL
-            return f"{protocol}://{domain}{obj.avatar.url}"
-        return None
-
-    def to_internal_value(self, data):
-        if 'avatar' in data and isinstance(data['avatar'], str):
-            data['avatar'] = Base64ImageField(required=True).to_internal_value(data['avatar'])
-        return super().to_internal_value(data)
-
-    def update(self, instance, validated_data):
-        avatar = validated_data.pop('avatar', None)
-        if avatar:
-            instance.avatar = avatar
-        else:
-            raise serializers.ValidationError('avatar is required')
-
-        return super().update(instance, validated_data)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -153,7 +139,8 @@ class RecipeSerializer(serializers.ModelSerializer):
     is_in_shopping_cart = serializers.SerializerMethodField()
     author = ProfileSerializer(read_only=True)
     image = Base64ImageField()
-    ingredients = RecipeIngredientSerializer(many=True, source='recipeingredient_set', required=True, allow_empty=False, allow_null=False)
+    ingredients = RecipeIngredientSerializer(many=True, source='recipeingredient_set', required=True,
+                                             allow_empty=False, allow_null=False)
     text = serializers.CharField(source='description')
     name = serializers.CharField(source='title', max_length=256)
     cooking_time = serializers.IntegerField(min_value=1)
@@ -185,7 +172,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             unique_tags.add(tag)
 
         return data
-
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -241,6 +227,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
     cooking_time = serializers.IntegerField(source='recipe.cooking_time', read_only=True)
     recipe = serializers.PrimaryKeyRelatedField(queryset=Recipe.objects.all(), write_only=True)
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True)
+
     class Meta:
         model = ShoppingCart
         fields = ('user', 'recipe', 'id', 'name', 'image', 'cooking_time')
@@ -262,6 +249,7 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
 
 class ShortLinkSerializer(serializers.Serializer):
     short_link = serializers.URLField()
+
 
 class FavoriteRecipeSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), write_only=True)
@@ -285,4 +273,5 @@ class FavoriteRecipeSerializer(serializers.ModelSerializer):
         return favorite_recipe
 
     def to_representation(self, instance):
-        return {'id': instance.recipe.id, 'name': instance.recipe.title, 'image': instance.recipe.image.url, 'cooking_time': instance.recipe.cooking_time}
+        return {'id': instance.recipe.id, 'name': instance.recipe.title, 'image': instance.recipe.image.url,
+                'cooking_time': instance.recipe.cooking_time}

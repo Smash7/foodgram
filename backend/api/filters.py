@@ -1,10 +1,11 @@
 import django_filters
-from django.db.models import Count
 from django.contrib.auth import get_user_model
+from django.db.models import Count
+
+from .models import Recipe, Tag
 
 User = get_user_model()
 
-from .models import Recipe, Tag
 
 class RecipeFilter(django_filters.rest_framework.FilterSet):
     is_favorited = django_filters.rest_framework.BooleanFilter(method='filter_is_favorited')
@@ -32,6 +33,7 @@ class RecipeFilter(django_filters.rest_framework.FilterSet):
             return queryset.filter(in_shopping_cart__user=user)
         return queryset
 
+
 class SubscriptionFilter(django_filters.FilterSet):
     recipes_limit = django_filters.NumberFilter(method='filter_recipes_limit')
 
@@ -43,6 +45,3 @@ class SubscriptionFilter(django_filters.FilterSet):
         if value is not None:
             queryset = queryset.annotate(recipes_count=Count('recipes')).filter(recipes_count__lte=value)
         return queryset
-
-
-

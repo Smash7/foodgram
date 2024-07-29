@@ -1,4 +1,4 @@
-from rest_framework.pagination import PageNumberPagination, LimitOffsetPagination
+from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
 from rest_framework.response import Response
 
 
@@ -25,4 +25,3 @@ class LimitSubscriptionsPagination(LimitOffsetPagination):
             'previous': self.get_previous_link(),
             'results': data
         })
-

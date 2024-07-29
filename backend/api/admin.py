@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import FoodgramUser, Tag, Ingredient, Recipe
+from .models import FoodgramUser, Ingredient, Recipe, Tag
 
 
 @admin.register(FoodgramUser)
@@ -20,6 +20,7 @@ class FoodgramUserAdmin(admin.ModelAdmin):
         }),
     )
 
+
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'slug')
@@ -27,6 +28,7 @@ class TagAdmin(admin.ModelAdmin):
     list_filter = ('id', 'name', 'slug')
     empty_value_display = '-пусто-'
     ordering = ('id',)
+
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):

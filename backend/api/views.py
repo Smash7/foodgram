@@ -1,21 +1,24 @@
+import requests
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from rest_framework import permissions, status, viewsets
-from rest_framework.response import Response
-from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.filters import OrderingFilter
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
-import requests
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from .permissions import IsOwnerOrReadOnly
-from .models import Tag, Recipe, Ingredient, ShoppingCart, FavoriteRecipe, Subscription
-from django.conf import settings
-from .pagination import LimitPagination, LimitSubscriptionsPagination
-from .serializers import AvatarSerializer, ProfileSerializer, TagSerializer, RecipeSerializer, IngredientSerializer, ShoppingCartSerializer, ShortLinkSerializer, SubscriptionSerializer, FavoriteRecipeSerializer
 from .filters import RecipeFilter, SubscriptionFilter
+from .models import FavoriteRecipe, Ingredient, Recipe, ShoppingCart, Subscription, Tag
+from .permissions import IsOwnerOrReadOnly
+from .serializers import (
+    AvatarSerializer, FavoriteRecipeSerializer, IngredientSerializer,
+    ProfileSerializer, RecipeSerializer, ShoppingCartSerializer,
+    ShortLinkSerializer, SubscriptionSerializer, TagSerializer
+)
 
 User = get_user_model()
 
@@ -24,6 +27,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().select_related('avatar')
     serializer_class = ProfileSerializer
     permission_classes = (permissions.IsAuthenticated,)
+
 
 class SubscriptionViewSet(viewsets.ModelViewSet):
     serializer_class = SubscriptionSerializer
@@ -94,8 +98,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     ordering = ('title',)
     filterset_fields = ('tags__slug', 'author__username', 'is_favorited', 'is_in_shopping_cart')
 
-
-    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated], url_path='favorite', url_name='favorite')
+    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated],
+            url_path='favorite', url_name='favorite')
     def favorite(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
         if request.method == 'POST':
@@ -109,7 +113,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
             FavoriteRecipe.objects.filter(user=request.user, recipe=recipe).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='download_shopping_cart', url_name='download_shopping_cart')
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='download_shopping_cart',
+            url_name='download_shopping_cart')
     def download_shopping_cart(self, request):
         shopping_cart = ShoppingCart.objects.filter(user=request.user)
         shopping_list = {}
@@ -125,8 +130,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = 'attachment; filename="shopping_list.txt"'
         return response
 
-
-    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated], url_path='shopping_cart', url_name='shopping_cart')
+    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated], url_path='shopping_cart',
+            url_name='shopping_cart')
     def shopping_cart(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
         if request.method == 'POST':
@@ -139,8 +144,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
         elif request.method == 'DELETE':
             ShoppingCart.objects.filter(user=request.user, recipe=recipe).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-
-
 
     @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny], url_path='get-link')
     def get_link(self, request, pk=None):
