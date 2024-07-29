@@ -12,7 +12,7 @@ router.register(r'users/subscriptions', SubscriptionViewSet, basename='subscript
 djoser_urls = [
     path('', include('djoser.urls')),
     path('users/<int:id>/subscribe/', SubscriptionViewSet.as_view({'post': 'subscribe'}), name='user-subscribe'),
-    path('users/<int:id>/unsubscribe/', SubscriptionViewSet.as_view({'post': 'unsubscribe'}), name='user-unsubscribe'),
+    path('users/<int:id>/unsubscribe/', SubscriptionViewSet.as_view({'delete': 'unsubscribe'}), name='user-unsubscribe'),
     path('auth/', include('djoser.urls.authtoken')),
 ]
 

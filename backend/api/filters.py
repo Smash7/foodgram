@@ -1,4 +1,8 @@
 import django_filters
+from django.db.models import Count
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 from .models import Recipe, Tag
 
@@ -27,3 +31,18 @@ class RecipeFilter(django_filters.rest_framework.FilterSet):
         if value:
             return queryset.filter(in_shopping_cart__user=user)
         return queryset
+
+class SubscriptionFilter(django_filters.FilterSet):
+    recipes_limit = django_filters.NumberFilter(method='filter_recipes_limit')
+
+    class Meta:
+        model = User
+        fields = []
+
+    def filter_recipes_limit(self, queryset, name, value):
+        if value is not None:
+            queryset = queryset.annotate(recipes_count=Count('recipes')).filter(recipes_count__lte=value)
+        return queryset
+
+
+

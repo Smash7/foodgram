@@ -102,7 +102,7 @@ class Recipe(models.Model):
         verbose_name='Автор'
     )
     title = models.CharField(
-        max_length=200,
+        max_length=256,
         verbose_name='Название рецепта',
         blank=False,
         null=False
