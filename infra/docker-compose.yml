@@ -10,7 +10,7 @@ networks:
 services:
   frontend:
     container_name: foodgram-front
-    build: smash7/foodgram_frontend:latest
+    image: smash7/foodgram_frontend:latest
     volumes:
       - ../frontend/:/app/result_build/
   nginx:
@@ -40,7 +40,7 @@ services:
     env_file:
       - .env
   backend:
-    build: smash7/foodgram_backend:latest
+    image: smash7/foodgram_backend:latest
     env_file:
       - .env
     container_name: backend
