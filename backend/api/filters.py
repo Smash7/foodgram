@@ -8,8 +8,12 @@ User = get_user_model()
 
 
 class RecipeFilter(django_filters.rest_framework.FilterSet):
-    is_favorited = django_filters.rest_framework.BooleanFilter(method='filter_is_favorited')
-    is_in_shopping_cart = django_filters.rest_framework.BooleanFilter(method='filter_is_in_shopping_cart')
+    is_favorited = django_filters.rest_framework.BooleanFilter(
+        method='filter_is_favorited'
+    )
+    is_in_shopping_cart = django_filters.rest_framework.BooleanFilter(
+        method='filter_is_in_shopping_cart'
+    )
     tags = django_filters.filters.ModelMultipleChoiceFilter(
         field_name='tags__slug',
         to_field_name='slug',
@@ -43,5 +47,8 @@ class SubscriptionFilter(django_filters.FilterSet):
 
     def filter_recipes_limit(self, queryset, name, value):
         if value is not None:
-            queryset = queryset.annotate(recipes_count=Count('recipes')).filter(recipes_count__lte=value)
+            queryset = queryset.annotate(
+                recipes_count=Count('recipes')).filter(
+                recipes_count__lte=value
+            )
         return queryset
