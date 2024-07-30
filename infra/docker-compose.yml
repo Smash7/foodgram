@@ -41,12 +41,14 @@ services:
       - .env
   backend:
     build: smash7/foodgram_backend:latest
+    env_file:
+      - .env
     container_name: backend
     depends_on:
       db:
         condition: service_healthy
     ports:
-      - "8800:8800"
+      - "8880:8880"
     volumes:
       - static:/app/static_backend
       - static:/app/media
