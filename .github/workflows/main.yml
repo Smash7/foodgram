@@ -57,7 +57,7 @@ jobs:
             pwd
             ls -a
             cp .env.example .env
-            cat >> .env <<EOF
+            cat > .env <<EOF
             
             DJANGO_DB_ENGINE=${{ secrets.DJANGO_DB_ENGINE }}
             DJANGO_DEBUG=${{ secrets.DJANGO_DEBUG }}
