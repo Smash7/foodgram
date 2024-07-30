@@ -58,12 +58,16 @@ jobs:
             ls -a
             cp .env.example .env
             cat >> .env <<EOF
-
-            DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
-            DJANGO_ALLOWED_HOSTS=${{ secrets.DJANGO_ALLOWED_HOSTS }}
-            DJANGO_DB=${{ secrets.DJANGO_DB }}
-            DJANGO_DEBUG=${{ secrets.DJANGO_DEBUG }}
-            POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+            
+            DJANGO_DB_ENGINE={{ secrets.DJANGO_DB_ENGINE }}
+            DJANGO_DEBUG={{ secrets.DJANGO_DEBUG }}
+            DJANGO_SECRET_KEY={{ secrets.DJANGO_SECRET_KEY }}
+            DJANGO_ALLOWED_HOSTS={{ secrets.DJANGO_ALLOWED_HOSTS }}
+            POSTGRES_DB={{ secrets.POSTGRES_DB }}
+            POSTGRES_USER={{ secrets.POSTGRES_USER }}
+            POSTGRES_PASSWORD={{ secrets.POSTGRES_PASSWORD }}
+            POSTGRES_HOST={{ secrets.POSTGRES_HOST }}
+            POSTGRES_PORT={{ secrets.POSTGRES_PORT }}
             EOF
             cat .env
             sudo docker compose -f docker-compose.yml pull
