@@ -78,7 +78,7 @@ if os.getenv('DJANGO_DB_ENGINE') == 'postgres':
             'PORT': os.getenv('POSTGRES_PORT', '5432'),
         }
     }
-elif os.getenv('DB_ENGINE') == 'sqlite':
+elif os.getenv('DJANGO_DB_ENGINE') == 'sqlite':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
