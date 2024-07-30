@@ -48,7 +48,7 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "8800:8800"
+      - "8880:8880"
     volumes:
       - static:/app/static_backend
       - static:/app/media
