@@ -1,6 +1,27 @@
+from functools import partial
+
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models
+
+UserRelatedField = partial(
+    models.ForeignKey,
+    settings.AUTH_USER_MODEL,
+    on_delete=models.CASCADE,
+    verbose_name='Пользователь',
+    blank=False,
+    null=False
+)
+RecipeRelatedField = partial(
+    models.ForeignKey,
+    'Recipe',
+    on_delete=models.CASCADE,
+    verbose_name='Рецепт',
+    blank=False,
+    null=False
+)
 
 
 class FoodgramUser(AbstractUser):
@@ -8,20 +29,14 @@ class FoodgramUser(AbstractUser):
     email = models.EmailField(
         unique=True,
         verbose_name='Email',
-        blank=False,
-        null=False
     )
     first_name = models.CharField(
         max_length=150,
         verbose_name='Имя',
-        blank=False,
-        null=False
     )
     last_name = models.CharField(
         max_length=150,
         verbose_name='Фамилия',
-        blank=False,
-        null=False
     )
     avatar = models.ImageField(
         null=True,
@@ -34,7 +49,12 @@ class FoodgramUser(AbstractUser):
     class Meta(AbstractUser.Meta):
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
-        ordering = ('id',)
+        ordering = ('first_name',)
+
+    def clean(self):
+        super().clean()
+        if self.username.lower() == 'me':
+            raise ValidationError({'username': 'Username cannot be "me".'})
 
     def recipe_count(self):
         return self.recipes.count()
@@ -53,13 +73,13 @@ class Subscription(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='follower',
+        related_name='followers',
         verbose_name='Подписчик'
     )
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='following',
+        related_name='authors',
         verbose_name='Автор'
     )
 
@@ -92,6 +112,7 @@ class Ingredient(models.Model):
     )
 
     class Meta:
+        ordering = ('name',)
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
 
@@ -108,6 +129,7 @@ class Tag(models.Model):
     )
 
     class Meta:
+        ordering = ('name',)
         verbose_name = 'Тэг'
         verbose_name_plural = 'Тэги'
 
@@ -145,14 +167,17 @@ class Recipe(models.Model):
     tags = models.ManyToManyField(
         Tag,
         verbose_name='Тэги',
+        related_name='recipes'
     )
     cooking_time = models.PositiveIntegerField(
-        verbose_name='Время приготовления',
+        verbose_name='Время приготовления (минуты)',
         blank=False,
-        null=False
+        null=False,
+        validators=[MinValueValidator(1)]
     )
 
     class Meta:
+        ordering = ('title',)
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
 
@@ -164,75 +189,76 @@ class Recipe(models.Model):
 
 
 class RecipeIngredient(models.Model):
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
-    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
-    amount = models.PositiveIntegerField()
+    recipe = models.ForeignKey(Recipe,
+                               related_name='recipe_ingredients',
+                               on_delete=models.CASCADE)
+    ingredient = models.ForeignKey(Ingredient,
+                                   related_name='recipe_ingredients',
+                                   on_delete=models.CASCADE)
+    amount = models.PositiveIntegerField(validators=[MinValueValidator(1)])
 
     class Meta:
+        ordering = ('recipe__title',)
         verbose_name = 'Ингредиент рецепта'
         verbose_name_plural = 'Ингредиенты рецепта'
-        unique_together = ('recipe', 'ingredient')
-
-
-class FavoriteRecipe(models.Model):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='favorites',
-        verbose_name='Пользователь',
-        blank=False,
-        null=False
-    )
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        related_name='favorited_by',
-        verbose_name='Рецепт',
-        blank=False,
-        null=False
-    )
-
-    class Meta:
-        verbose_name = 'Избранный рецепт'
-        verbose_name_plural = 'Избранные рецепты'
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'recipe'],
-                name='unique_favorite_recipe'
+                fields=['recipe', 'ingredient'],
+                name='unique_recipe_ingredient'
             )
         ]
 
     def __str__(self):
-        return f'{self.user} добавил в избранное рецепт "{self.recipe}"'
+        return f'{self.ingredient} в {self.recipe}'
 
 
-class ShoppingCart(models.Model):
+class UserRecipeRelation(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='shopping_cart',
         verbose_name='Пользователь',
         blank=False,
         null=False
     )
     recipe = models.ForeignKey(
-        Recipe,
+        'Recipe',
         on_delete=models.CASCADE,
-        related_name='in_shopping_cart',
         verbose_name='Рецепт',
         blank=False,
         null=False
     )
 
     class Meta:
-        verbose_name = 'Рецепт в корзине'
-        verbose_name_plural = 'Рецепты в корзине'
+        abstract = True
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'recipe'],
-                name='unique_shopping_cart'
+                name='%(class)s_unique_user_recipe'
             )
         ]
+
+    def __str__(self):
+        return f'{self.user} добавил рецепт "{self.recipe}"'
+
+
+class FavoriteRecipe(UserRecipeRelation):
+    user = UserRelatedField(related_name='user_favorites')
+    recipe = RecipeRelatedField(related_name='recipe_favorites')
+
+    class Meta(UserRecipeRelation.Meta):
+        verbose_name = 'Избранный рецепт'
+        verbose_name_plural = 'Избранные рецепты'
+        db_table = 'favorite_recipe'
+
+
+class ShoppingCart(UserRecipeRelation):
+    user = UserRelatedField(related_name='user_shopping_cart')
+    recipe = RecipeRelatedField(related_name='recipes_in_shopping_cart')
+
+    class Meta(UserRecipeRelation.Meta):
+        verbose_name = 'Рецепт в корзине'
+        verbose_name_plural = 'Рецепты в корзине'
+        db_table = 'shopping_cart'
 
     def __str__(self):
         return f'{self.user} добавил в корзину рецепт "{self.recipe}"'
