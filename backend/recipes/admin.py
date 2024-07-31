@@ -4,7 +4,7 @@ from .models import FoodgramUser, Ingredient, Recipe, Tag
 
 
 class HasRecipesFilter(admin.SimpleListFilter):
-    title = 'Has Recipes'
+    title = 'Есть рецепты'
     parameter_name = 'has_recipes'
 
     def lookups(self, request, model_admin):
@@ -22,7 +22,7 @@ class HasRecipesFilter(admin.SimpleListFilter):
 
 
 class HasSubscriptionsFilter(admin.SimpleListFilter):
-    title = 'Has Subscriptions'
+    title = 'Есть подписки'
     parameter_name = 'has_subscriptions'
 
     def lookups(self, request, model_admin):
@@ -40,7 +40,7 @@ class HasSubscriptionsFilter(admin.SimpleListFilter):
 
 
 class HasFollowersFilter(admin.SimpleListFilter):
-    title = 'Has Followers'
+    title = 'Есть подписчики'
     parameter_name = 'has_followers'
 
     def lookups(self, request, model_admin):
@@ -87,7 +87,6 @@ class FoodgramUserAdmin(admin.ModelAdmin):
 class TagAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'slug')
     search_fields = ('id', 'name', 'slug')
-    list_filter = ('id', 'name', 'slug')
     empty_value_display = '-пусто-'
     ordering = ('id',)
 
