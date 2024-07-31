@@ -82,6 +82,10 @@ class Ingredient(models.Model):
         null=False
     )
 
+    class Meta:
+        verbose_name = 'Ингредиент'
+        verbose_name_plural = 'Ингредиенты'
+
 
 class Tag(models.Model):
     name = models.CharField(
@@ -93,6 +97,10 @@ class Tag(models.Model):
         unique=True,
         verbose_name='Slug'
     )
+
+    class Meta:
+        verbose_name = 'Тэг'
+        verbose_name_plural = 'Тэги'
 
 
 class Recipe(models.Model):
@@ -135,6 +143,10 @@ class Recipe(models.Model):
         null=False
     )
 
+    class Meta:
+        verbose_name = 'Рецепт'
+        verbose_name_plural = 'Рецепты'
+
     def is_favorited(self, user):
         return self.favorited_by.filter(user=user).exists()
 
@@ -148,6 +160,8 @@ class RecipeIngredient(models.Model):
     amount = models.PositiveIntegerField()
 
     class Meta:
+        verbose_name = 'Ингредиент рецепта'
+        verbose_name_plural = 'Ингредиенты рецепта'
         unique_together = ('recipe', 'ingredient')
 
 
