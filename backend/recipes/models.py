@@ -25,7 +25,8 @@ RecipeRelatedField = partial(
 
 
 class FoodgramUser(AbstractUser):
-    REQUIRED_FIELDS = ['email', 'first_name', 'last_name']
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
+    USERNAME_FIELD = 'email'
     email = models.EmailField(
         unique=True,
         verbose_name='Email',

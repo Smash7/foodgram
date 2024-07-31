@@ -5,11 +5,14 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import NotAuthenticated
 from rest_framework.filters import OrderingFilter
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import (IsAuthenticated, AllowAny)
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import ValidationError
+
 
 from .filters import RecipeFilter, SubscriptionFilter
 from recipes.models import (FavoriteRecipe, Ingredient, Recipe,
@@ -28,6 +31,17 @@ class ProfileViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().select_related('avatar')
     serializer_class = ProfileSerializer
     permission_classes = (permissions.IsAuthenticated,)
+
+    @action(detail=False, methods=['get'], permission_classes=[AllowAny],
+            url_path='me')
+    def get_me(self, request):
+        if not request.user.is_authenticated:
+            raise NotAuthenticated(
+                'Authentication credentials were not provided.'
+            )
+
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
 
 
 class SubscriptionViewSet(viewsets.ModelViewSet):
@@ -197,6 +211,69 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         return Response({'error': 'Could not generate short link'},
                         status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post', 'delete'],
+            permission_classes=[IsAuthenticated], url_path='shopping_cart',
+            url_name='shopping_cart')
+    def manage_shopping_cart(self, request, pk=None):
+        recipe = get_object_or_404(Recipe, pk=pk)
+        user = request.user
+
+        if request.method == 'POST':
+            if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
+                raise ValidationError(
+                    'This recipe is already in your shopping cart'
+                )
+            ShoppingCart.objects.create(user=user, recipe=recipe)
+            return Response({
+                'id': recipe.id,
+                'name': recipe.title,
+                'image': recipe.image.url,
+                'cooking_time': recipe.cooking_time
+            }, status=status.HTTP_201_CREATED)
+
+        if request.method == 'DELETE':
+            shopping_cart_item = ShoppingCart.objects.filter(
+                user=user,
+                recipe=recipe
+            ).first()
+            if shopping_cart_item:
+                shopping_cart_item.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            raise ValidationError('This recipe is not in your shopping cart')
+
+    @action(detail=True, methods=['post', 'delete'],
+            permission_classes=[IsAuthenticated], url_path='favorite',
+            url_name='favorite')
+    def manage_favorite(self, request, pk=None):
+        recipe = get_object_or_404(Recipe, pk=pk)
+        user = request.user
+
+        if request.method == 'POST':
+            if FavoriteRecipe.objects.filter(
+                    user=user,
+                    recipe=recipe
+            ).exists():
+                raise ValidationError(
+                    'This recipe is already in your favorites'
+                )
+            FavoriteRecipe.objects.create(user=user, recipe=recipe)
+            return Response({
+                'id': recipe.id,
+                'name': recipe.title,
+                'image': recipe.image.url,
+                'cooking_time': recipe.cooking_time
+            }, status=status.HTTP_201_CREATED)
+
+        if request.method == 'DELETE':
+            favorite_recipe = FavoriteRecipe.objects.filter(
+                user=user,
+                recipe=recipe
+            ).first()
+            if favorite_recipe:
+                favorite_recipe.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            raise ValidationError('This recipe is not in your favorites')
 
     def get_short_link(self, url):
         clck_url = f'https://clck.ru/--?url={url}'
