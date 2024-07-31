@@ -3,15 +3,69 @@ from django.contrib import admin
 from .models import FoodgramUser, Ingredient, Recipe, Tag
 
 
+class HasRecipesFilter(admin.SimpleListFilter):
+    title = 'Has Recipes'
+    parameter_name = 'has_recipes'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Yes'),
+            ('no', 'No'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'yes':
+            return queryset.filter(recipes__isnull=False).distinct()
+        if self.value() == 'no':
+            return queryset.filter(recipes__isnull=True)
+        return queryset
+
+
+class HasSubscriptionsFilter(admin.SimpleListFilter):
+    title = 'Has Subscriptions'
+    parameter_name = 'has_subscriptions'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Yes'),
+            ('no', 'No'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'yes':
+            return queryset.filter(follower__isnull=False).distinct()
+        if self.value() == 'no':
+            return queryset.filter(follower__isnull=True)
+        return queryset
+
+
+class HasFollowersFilter(admin.SimpleListFilter):
+    title = 'Has Followers'
+    parameter_name = 'has_followers'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', 'Yes'),
+            ('no', 'No'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'yes':
+            return queryset.filter(following__isnull=False).distinct()
+        if self.value() == 'no':
+            return queryset.filter(following__isnull=True)
+        return queryset
+
+
 @admin.register(FoodgramUser)
 class FoodgramUserAdmin(admin.ModelAdmin):
     list_display = ('id', 'username', 'email', 'first_name', 'last_name',
-                    'is_staff', 'is_active')
+                    'is_staff', 'is_active', 'recipe_count',
+                    'subscription_count', 'follower_count')
     search_fields = ('id', 'username', 'email', 'first_name', 'last_name')
-    list_filter = ('id', 'username', 'email', 'first_name',
-                   'last_name', 'is_staff', 'is_active')
+    list_filter = (HasRecipesFilter, HasSubscriptionsFilter,
+                   HasFollowersFilter)
     empty_value_display = '-пусто-'
-    ordering = ('id',)
     readonly_fields = ('avatar',)
     fieldsets = (
         (None, {
@@ -22,6 +76,11 @@ class FoodgramUserAdmin(admin.ModelAdmin):
             'fields': ('is_staff', 'is_active')
         }),
     )
+
+    def has_recipes(self, obj):
+        return obj.recipes.exists()
+    has_recipes.boolean = True
+    has_recipes.short_description = 'Есть рецепты'
 
 
 @admin.register(Tag)
