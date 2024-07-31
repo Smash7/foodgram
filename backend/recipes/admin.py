@@ -6,7 +6,8 @@ from .models import FoodgramUser, Ingredient, Recipe, Tag
 @admin.register(FoodgramUser)
 class FoodgramUserAdmin(admin.ModelAdmin):
     list_display = ('id', 'username', 'email', 'first_name', 'last_name',
-                    'is_staff', 'is_active')
+                    'is_staff', 'is_active', 'recipe_count',
+                    'subscription_count', 'follower_count')
     search_fields = ('id', 'username', 'email', 'first_name', 'last_name')
     list_filter = ('id', 'username', 'email', 'first_name',
                    'last_name', 'is_staff', 'is_active')

@@ -36,6 +36,15 @@ class FoodgramUser(AbstractUser):
         verbose_name_plural = 'Пользователи'
         ordering = ('id',)
 
+    def recipe_count(self):
+        return self.recipes.count()
+
+    def subscription_count(self):
+        return self.following.count()
+
+    def follower_count(self):
+        return self.follower.count()
+
     def __str__(self):
         return self.username
 
