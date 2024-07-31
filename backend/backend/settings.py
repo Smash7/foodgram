@@ -16,7 +16,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 DEBUG = True if os.getenv('DJANGO_DEBUG') == 'True' else False
 APPEND_SLASH = False
 ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS').split(',')
-AUTH_USER_MODEL = 'api.FoodgramUser'
+AUTH_USER_MODEL = 'recipes.FoodgramUser'
 
 # Application definition
 
@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'djoser',
     'api',
+    'recipes',
 ]
 
 MIDDLEWARE = [

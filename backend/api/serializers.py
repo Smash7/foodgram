@@ -12,7 +12,7 @@ from djoser.serializers import (
 )
 from drf_extra_fields.fields import Base64ImageField as DrfBase64ImageField
 
-from backend.recipes.models import (
+from recipes.models import (
     FavoriteRecipe, Ingredient, Recipe,
     RecipeIngredient, ShoppingCart, Subscription, Tag
 )

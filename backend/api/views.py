@@ -12,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .filters import RecipeFilter, SubscriptionFilter
-from backend.recipes.models import (FavoriteRecipe, Ingredient, Recipe,
+from recipes.models import (FavoriteRecipe, Ingredient, Recipe,
                                     ShoppingCart, Subscription, Tag)
 from .permissions import IsOwnerOrReadOnly
 from .serializers import (
