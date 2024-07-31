@@ -2,7 +2,7 @@ import django_filters
 from django.contrib.auth import get_user_model
 from django.db.models import Count
 
-from .models import Recipe, Tag
+from backend.recipes.models import Recipe, Tag
 
 User = get_user_model()
 
