@@ -2,8 +2,7 @@ import django_filters
 from django.contrib.auth import get_user_model
 from django.db.models import Count
 
-from .models import Recipe, Tag
-
+from recipes.models import Recipe, Tag
 User = get_user_model()
 
 
@@ -25,16 +24,16 @@ class RecipeFilter(django_filters.rest_framework.FilterSet):
         model = Recipe
         fields = ['tags', 'author', 'is_favorited', 'is_in_shopping_cart']
 
-    def filter_is_favorited(self, queryset, name, value):
+    def filter_is_favorited(self, recipes, name, value):
         user = self.request.user
         if value:
-            return queryset.filter(favorited_by__user=user)
-        return queryset
+            return recipes.filter(recipe_favorites__user=user)
+        return recipes
 
     def filter_is_in_shopping_cart(self, queryset, name, value):
         user = self.request.user
         if value:
-            return queryset.filter(in_shopping_cart__user=user)
+            return queryset.filter(recipes_in_shopping_cart__user=user)
         return queryset
 
 
