@@ -93,7 +93,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
     author = ProfileSerializer(read_only=True)
-    image = DrfBase64ImageField(required=True, allow_null=False, allow_empty_file=False,)
+    image = DrfBase64ImageField()
     ingredients = RecipeIngredientSerializer(many=True, source='recipe_ingredients', required=True, allow_empty=False, allow_null=False)
     text = serializers.CharField(source='description')
     name = serializers.CharField(source='title')
@@ -105,6 +105,11 @@ class RecipeSerializer(serializers.ModelSerializer):
             'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
         )
         read_only_fields = ('is_favorited', 'is_in_shopping_cart', 'id', 'author')
+
+    def validate_image(self, image):
+        if not image:
+            raise serializers.ValidationError("Image is required.")
+        return image
 
     def validate_ingredients(self, ingredients):
         if len(ingredients) == 0:
