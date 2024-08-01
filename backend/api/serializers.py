@@ -93,7 +93,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
     author = ProfileSerializer(read_only=True)
-    image = DrfBase64ImageField()
+    image = DrfBase64ImageField(required=True, allow_null=False, allow_empty_file=False,)
     ingredients = RecipeIngredientSerializer(many=True, source='recipe_ingredients', required=True, allow_empty=False, allow_null=False)
     text = serializers.CharField(source='description')
     name = serializers.CharField(source='title')
