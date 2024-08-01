@@ -79,10 +79,10 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
-    id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all(), source='ingredient.id')
+    id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all(), source='ingredient.id', required=True)
     name = serializers.CharField(source='ingredient.name', read_only=True)
     measurement_unit = serializers.CharField(source='ingredient.measurement_unit', read_only=True)
-    amount = serializers.IntegerField(min_value=1)
+    amount = serializers.IntegerField(min_value=1, required=True)
 
     class Meta:
         model = RecipeIngredient
@@ -96,7 +96,10 @@ class RecipeSerializer(serializers.ModelSerializer):
     image = DrfBase64ImageField()
     ingredients = RecipeIngredientSerializer(many=True, source='recipe_ingredients', required=True, allow_empty=False, allow_null=False)
     text = serializers.CharField(source='description')
-    name = serializers.CharField(source='title')
+    name = serializers.CharField(
+        source='title',
+        max_length=Recipe._meta.get_field('title').max_length
+    )
 
     class Meta:
         model = Recipe
@@ -163,7 +166,9 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         ingredients_data = validated_data.pop('recipe_ingredients', [])
+        self.validate_ingredients(ingredients_data)
         tags_data = validated_data.pop('tags', [])
+        self.validate_tags(tags_data)
 
         instance.title = validated_data.get('title', instance.title)
         instance.description = validated_data.get('description', instance.description)
