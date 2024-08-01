@@ -183,10 +183,10 @@ class Recipe(models.Model):
         verbose_name_plural = 'Рецепты'
 
     def is_favorited(self, user):
-        return self.favorited_by.filter(user=user).exists()
+        return self.recipe_favorites.filter(user=user).exists()
 
     def is_in_shopping_cart(self, user):
-        return self.in_shopping_cart.filter(user=user).exists()
+        return self.recipes_in_shopping_cart.filter(user=user).exists()
 
 
 class RecipeIngredient(models.Model):
