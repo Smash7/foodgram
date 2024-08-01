@@ -111,7 +111,7 @@ class AvatarUploadView(APIView):
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
-    permission_classes = (IsOwnerOrReadOnly, IsAuthenticated)
+    permission_classes = (IsOwnerOrReadOnly,)
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = RecipeFilter
     pagination_class = LimitOffsetPagination
