@@ -202,7 +202,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         original_url = request.build_absolute_uri(reverse('recipe-detail',
                                                           args=[recipe.id]))
         short_url = self.get_short_link(original_url)
-        return Response({'short_url': short_url})
+        return Response({'short-link': original_url+short_url})
 
     def get_short_link(self, url):
         return hashlib.md5(url.encode()).hexdigest()[:8]
