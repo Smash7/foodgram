@@ -7,7 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.filters import OrderingFilter
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import (IsAuthenticated, AllowAny)
+from rest_framework.permissions import (IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from django.http import FileResponse
 from django.urls import reverse
@@ -111,7 +111,7 @@ class AvatarUploadView(APIView):
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
-    permission_classes = (IsOwnerOrReadOnly,)
+    permission_classes = (IsOwnerOrReadOnly, IsAuthenticatedOrReadOnly)
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = RecipeFilter
     pagination_class = LimitOffsetPagination
