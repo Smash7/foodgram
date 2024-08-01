@@ -1,10 +1,7 @@
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from rest_framework.exceptions import NotAuthenticated
 
 from djoser.serializers import (
-    UserCreateSerializer as DjoserUserCreateSerializer,
     UserSerializer as DjoserUserSerializer
 )
 from drf_extra_fields.fields import Base64ImageField as DrfBase64ImageField
@@ -34,15 +31,8 @@ class ProfileSerializer(DjoserUserSerializer):
         return False
 
 
-# class Base64ImageField(DrfBase64ImageField):
-#     def to_representation(self, value):
-#         return ('https://' + settings.ALLOWED_HOSTS[0] + value.url
-#                 if value else None)
-
-
 class SimpleRecipeSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='title')
-    #image = DrfBase64ImageField(use_url=True)
 
     class Meta:
         model = Recipe

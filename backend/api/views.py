@@ -36,9 +36,10 @@ User = get_user_model()
 
 
 class ProfileViewSet(djoser.views.UserViewSet):
-    queryset = User.objects.all().select_related('avatar')
+    queryset = User.objects.all()
     serializer_class = ProfileSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    pagination_class = LimitOffsetPagination
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
     @action(detail=False, methods=['get'], permission_classes=[AllowAny],
             url_path='me')
