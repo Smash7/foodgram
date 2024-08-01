@@ -61,7 +61,7 @@ class FoodgramUser(AbstractUser):
         return self.recipes.count()
 
     def subscription_count(self):
-        return self.following.count()
+        return self.authors.count()
 
     def follower_count(self):
         return self.follower.count()

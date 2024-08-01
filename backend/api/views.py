@@ -29,7 +29,8 @@ from .permissions import IsOwnerOrReadOnly
 from .serializers import (
     AvatarSerializer, IngredientSerializer,
     ProfileSerializer, RecipeSerializer,
-    SubscriptionSerializer, TagSerializer
+    SubscriptionSerializer, TagSerializer,
+    FavoriteSerializer, ShoppingCartSerializer
 )
 
 User = get_user_model()
@@ -90,7 +91,7 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     filterset_class = SubscriptionFilter
 
     def get_queryset(self):
-        return User.objects.filter(following__user=self.request.user)
+        return User.objects.filter(authors__user=self.request.user)
 
 
 class AvatarUploadView(APIView):
@@ -120,7 +121,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_fields = ('tags__slug', 'author__username',
                         'is_favorited', 'is_in_shopping_cart')
 
-    def handle_action(request, pk, model, serializer_class):
+    def handle_action(self, request, pk, model, serializer_class):
         recipe = get_object_or_404(Recipe, pk=pk)
         if request.method == 'POST':
             data = {'user': request.user.id, 'recipe': recipe.id}
@@ -142,15 +143,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated], url_path='favorite',
             url_name='favorite')
     def favorite(self, request, pk=None):
-        return self.handle_action(request, pk, FavoriteRecipe, RecipeSerializer)
+        return self.handle_action(request, pk, FavoriteRecipe, FavoriteSerializer)
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthenticated], url_path='shopping_cart',
             url_name='shopping_cart')
     def shopping_cart(self, request, pk=None):
-        return self.handle_action(request, pk, ShoppingCart, RecipeSerializer)
+        return self.handle_action(request, pk, ShoppingCart, ShoppingCartSerializer)
 
-    def generate_shopping_list(user):
+    def generate_shopping_list(self, user):
         shopping_cart = ShoppingCart.objects.filter(user=user)
 
         ingredient_quantities = RecipeIngredient.objects.filter(

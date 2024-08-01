@@ -41,17 +41,18 @@ class SimpleRecipeSerializer(serializers.ModelSerializer):
 
 class SubscriptionSerializer(ProfileSerializer):
     recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.IntegerField(source='recipes_count')
 
     class Meta:
         model = User
         fields = ('email', 'id', 'username', 'first_name', 'last_name',
-                  'is_subscribed', 'recipes', 'recipes_count', 'avatar')
+                  'is_subscribed', 'recipes', 'recipe_count', 'avatar')
 
     def get_recipes(self, recipes_obj):
         request = self.context.get('request')
         return SimpleRecipeSerializer(
-            int(request.GET.get('recipes_limit', 10**10)), many=True,
+            recipes_obj.recipes.all()[:int(
+                request.GET.get('recipes_limit', 10**10)
+            )], many=True,
             context={'request': request}
         ).data
 
@@ -194,3 +195,39 @@ class RecipeSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return recipe.is_in_shopping_cart(request.user)
         return False
+
+
+class BasketSerializer(serializers.ModelSerializer):
+    class Meta:
+        abstract = True
+        fields = ('recipe', 'user')
+
+
+class FavoriteSerializer(BasketSerializer):
+    class Meta(BasketSerializer.Meta):
+        model = FavoriteRecipe
+        validators = [
+            serializers.UniqueTogetherValidator(
+                queryset=model.objects.all(),
+                fields=('user', 'recipe'),
+                message='This recipe is already in your favorites.'
+            )
+        ]
+
+    def to_representation(self, instance):
+        return SimpleRecipeSerializer(instance.recipe).data
+
+
+class ShoppingCartSerializer(BasketSerializer):
+    class Meta(BasketSerializer.Meta):
+        model = ShoppingCart
+        validators = [
+            serializers.UniqueTogetherValidator(
+                queryset=model.objects.all(),
+                fields=('user', 'recipe'),
+                message='This recipe is already in your shopping cart.'
+            )
+        ]
+
+    def to_representation(self, instance):
+        return SimpleRecipeSerializer(instance.recipe).data

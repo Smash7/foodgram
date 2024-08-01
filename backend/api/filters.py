@@ -27,13 +27,13 @@ class RecipeFilter(django_filters.rest_framework.FilterSet):
     def filter_is_favorited(self, recipes, name, value):
         user = self.request.user
         if value:
-            return recipes.filter(favorited_by__user=user)
+            return recipes.filter(recipe_favorites__user=user)
         return recipes
 
     def filter_is_in_shopping_cart(self, queryset, name, value):
         user = self.request.user
         if value:
-            return queryset.filter(in_shopping_cart__user=user)
+            return queryset.filter(recipes_in_shopping_cart__user=user)
         return queryset
 
 
