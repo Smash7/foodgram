@@ -28,7 +28,6 @@ from .serializers import (
     AvatarSerializer, IngredientSerializer,
     ProfileSerializer, RecipeSerializer,
     SubscriptionSerializer, TagSerializer, SimpleRecipeSerializer
-   # FavoriteSerializer, ShoppingCartSerializer
 )
 
 User = get_user_model()
@@ -40,18 +39,14 @@ class ProfileViewSet(djoser.views.UserViewSet):
     pagination_class = LimitOffsetPagination
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
-    @action(detail=False, methods=['get'], permission_classes=[AllowAny],
+    @action(detail=False, methods=['get'],
+            permission_classes=[IsAuthenticated],
             url_path='me')
     def get_me(self, request):
-        if not request.user.is_authenticated:
-            raise NotAuthenticated(
-                'Authentication credentials were not provided.'
-            )
+        return Response(self.get_serializer(request.user).data)
 
-        serializer = self.get_serializer(request.user)
-        return Response(serializer.data)
-
-    @action(detail=False, methods=['put', 'delete'], permission_classes=[IsAuthenticated], url_path='me/avatar')
+    @action(detail=False, methods=['put', 'delete'],
+            permission_classes=[IsAuthenticated], url_path='me/avatar')
     def avatar(self, request):
         if request.method == 'PUT':
             serializer = AvatarSerializer(request.user, data=request.data)
