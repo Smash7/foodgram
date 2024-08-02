@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from djoser.serializers import (
@@ -84,7 +85,8 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
         source='ingredient.measurement_unit',
         read_only=True
     )
-    amount = serializers.IntegerField(min_value=1, required=True)
+    amount = serializers.IntegerField(min_value=settings.INGREDIENT_MIN_AMOUNT,
+                                      required=True)
 
     class Meta:
         model = RecipeIngredient
