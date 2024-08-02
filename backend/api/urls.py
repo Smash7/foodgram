@@ -14,8 +14,6 @@ router.register(r'recipes', RecipeViewSet, basename='recipe-detail')
 router.register(r'ingredients', IngredientViewSet,
                 basename='ingredient-detail')
 
-
-
 urlpatterns = [
     path('auth/', include('djoser.urls.authtoken')),
     path('users/me/avatar/', AvatarUploadView.as_view(), name='avatar-upload'),
