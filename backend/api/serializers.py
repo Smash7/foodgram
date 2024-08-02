@@ -41,8 +41,7 @@ class SubscriptionSerializer(ProfileSerializer):
 
     class Meta:
         model = User
-        fields = ('email', 'id', 'username', 'first_name', 'last_name',
-                  'is_subscribed', 'recipes', 'recipe_count', 'avatar')
+        fields = (*ProfileSerializer.Meta.fields, 'recipe_count')
 
     def get_recipes(self, recipes_obj):
         request = self.context.get('request')
