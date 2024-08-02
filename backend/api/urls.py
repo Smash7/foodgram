@@ -1,7 +1,7 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import (AvatarUploadView, IngredientViewSet, RecipeViewSet,
+from .views import (IngredientViewSet, RecipeViewSet,
                     SubscriptionViewSet, TagViewSet, ProfileViewSet)
 
 
@@ -16,7 +16,5 @@ router.register(r'ingredients', IngredientViewSet,
 
 urlpatterns = [
     path('auth/', include('djoser.urls.authtoken')),
-    path('users/me/avatar/', AvatarUploadView.as_view(), name='avatar-upload'),
     path('', include(router.urls)),
-    # path('', include('djoser.urls')),
 ]

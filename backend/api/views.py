@@ -51,6 +51,18 @@ class ProfileViewSet(djoser.views.UserViewSet):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['put', 'delete'], permission_classes=[IsAuthenticated], url_path='me/avatar')
+    def avatar(self, request):
+        if request.method == 'PUT':
+            serializer = AvatarSerializer(request.user, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        elif request.method == 'DELETE':
+            request.user.avatar = None
+            request.user.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
     @action(detail=False, methods=['get'])
     def list_subscriptions(self, request):
         subscriptions = self.get_queryset()
@@ -90,21 +102,6 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return User.objects.filter(authors__user=self.request.user)
-
-
-class AvatarUploadView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def put(self, request, *args, **kwargs):
-        serializer = AvatarSerializer(request.user, data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def delete(self, request, *args, **kwargs):
-        request.user.avatar = None
-        request.user.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
