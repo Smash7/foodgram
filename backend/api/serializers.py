@@ -19,15 +19,14 @@ class ProfileSerializer(DjoserUserSerializer):
 
     class Meta(DjoserUserSerializer.Meta):
         model = User
-        fields = DjoserUserSerializer.Meta.fields + ('is_subscribed', 'avatar')
+        fields = (*DjoserUserSerializer.Meta.fields, 'is_subscribed', 'avatar')
         read_only_fields = ('is_subscribed', 'avatar')
 
     def get_is_subscribed(self, user):
         request = self.context.get('request', None)
-        if request and request.user.is_authenticated:
-            return Subscription.objects.filter(user=request.user,
-                                               author=user).exists()
-        return False
+        return (request and request.user.is_authenticated
+                and Subscription.objects.filter(user=request.user,
+                                                author=user).exists())
 
 
 class SimpleRecipeSerializer(serializers.ModelSerializer):
