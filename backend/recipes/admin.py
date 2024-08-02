@@ -5,8 +5,8 @@ from .models import FoodgramUser, Ingredient, Recipe, Tag
 
 
 class HasRecipesFilter(admin.SimpleListFilter):
-    name = 'Есть рецепты'
-    parameter_name = 'has_recipes'
+    title = 'Есть рецепты'
+    parameter_title = 'has_recipes'
 
     def lookups(self, request, model_admin):
         return (
@@ -23,8 +23,8 @@ class HasRecipesFilter(admin.SimpleListFilter):
 
 
 class HasSubscriptionsFilter(admin.SimpleListFilter):
-    name = 'Есть подписки'
-    parameter_name = 'has_subscriptions'
+    title = 'Есть подписки'
+    parameter_title = 'has_subscriptions'
 
     def lookups(self, request, model_admin):
         return (
@@ -41,8 +41,8 @@ class HasSubscriptionsFilter(admin.SimpleListFilter):
 
 
 class HasFollowersFilter(admin.SimpleListFilter):
-    name = 'Есть подписчики'
-    parameter_name = 'has_followers'
+    title = 'Есть подписчики'
+    parameter_title = 'has_followers'
 
     def lookups(self, request, model_admin):
         return (
@@ -88,7 +88,7 @@ class TagAdmin(admin.ModelAdmin):
 
 
 class IsIngredientUsedFilter(admin.SimpleListFilter):
-    name = 'Используется в рецептах'
+    title = 'Используется в рецептах'
     parameter_name = 'is_ingredient_used'
 
     def lookups(self, request, model_admin):
@@ -114,8 +114,8 @@ class IngredientAdmin(admin.ModelAdmin):
 
 
 class CookingTimeFilter(admin.SimpleListFilter):
-    name = 'Cooking Time'
-    parameter_name = 'cooking_time'
+    title = 'Cooking Time'
+    parameter_title = 'cooking_time'
 
     def lookups(self, request, model_admin):
         return (

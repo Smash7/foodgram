@@ -107,7 +107,6 @@ class RecipeSerializer(serializers.ModelSerializer):
                                              allow_null=False)
     text = serializers.CharField(source='description')
     name = serializers.CharField(
-        source='name',
         max_length=Recipe._meta.get_field('name').max_length
     )
 
@@ -120,6 +119,22 @@ class RecipeSerializer(serializers.ModelSerializer):
         read_only_fields = ('is_favorited', 'is_in_shopping_cart',
                             'id', 'author')
 
+    def check_duplicates(self, obj):
+        item_count = {}
+        for item in obj:
+            if isinstance(item, dict):
+                item = item.get('ingredient').get('id')
+            if item in item_count:
+                item_count[item.name] += 1
+            else:
+                item_count[item.name] = 1
+        duplicates = [item for item, count in item_count.items() if count > 1]
+
+        if duplicates:
+            raise serializers.ValidationError(
+                f"Дубликаты: {duplicates}"
+            )
+
     def validate_image(self, image):
         if not image:
             raise serializers.ValidationError("Изображение не выбрано.")
@@ -130,16 +145,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Рецепт должен содержать хотя бы один ингредиент."
             )
-        unique_ingredients = {ingredient_obj.get('ingredient').get('id')
-                              for ingredient_obj in ingredients}
-        duplicates = [ingredient_obj.get('ingredient').get('name')
-                      for ingredient_obj in ingredients
-                      if ingredient_obj.get('ingredient').get('id')
-                      in unique_ingredients]
-        if duplicates:
-            raise serializers.ValidationError(
-                f"Дубликаты: {duplicates}"
-            )
+        self.check_duplicates(ingredients)
         return ingredients
 
     def validate_tags(self, tags):
@@ -147,12 +153,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "Рецепт должен содержать хотя бы один тег."
             )
-        unique_tags = {tag.id for tag in tags}
-        duplicates = [tag.name for tag in tags if tag.id in unique_tags]
-        if duplicates:
-            raise serializers.ValidationError(
-                f"Дубликаты: {duplicates}"
-            )
+        self.check_duplicates(tags)
         return tags
 
     def to_representation(self, instance):
@@ -204,39 +205,3 @@ class RecipeSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return recipe.is_in_shopping_cart(request.user)
         return False
-
-
-class BasketSerializer(serializers.ModelSerializer):
-    class Meta:
-        abstract = True
-        fields = ('recipe', 'user')
-
-
-class FavoriteSerializer(BasketSerializer):
-    class Meta(BasketSerializer.Meta):
-        model = FavoriteRecipe
-        validators = [
-            serializers.UniqueTogetherValidator(
-                queryset=model.objects.all(),
-                fields=('user', 'recipe'),
-                message='This recipe is already in your favorites.'
-            )
-        ]
-
-    def to_representation(self, instance):
-        return SimpleRecipeSerializer(instance.recipe).data
-
-
-class ShoppingCartSerializer(BasketSerializer):
-    class Meta(BasketSerializer.Meta):
-        model = ShoppingCart
-        validators = [
-            serializers.UniqueTogetherValidator(
-                queryset=model.objects.all(),
-                fields=('user', 'recipe'),
-                message='This recipe is already in your shopping cart.'
-            )
-        ]
-
-    def to_representation(self, instance):
-        return SimpleRecipeSerializer(instance.recipe).data

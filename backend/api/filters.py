@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Count
 
 from recipes.models import Recipe, Tag
+
 User = get_user_model()
 
 
