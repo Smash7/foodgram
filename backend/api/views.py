@@ -1,4 +1,6 @@
-from django.conf import settings
+import hashlib
+import io
+
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -7,24 +9,20 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.filters import OrderingFilter
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import (IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly)
+from rest_framework.permissions import (IsAuthenticated, AllowAny,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from django.http import FileResponse
 from django.urls import reverse
 from rest_framework.views import APIView
 from rest_framework.exceptions import ValidationError
 from django.utils import timezone
-import hashlib
-from rest_framework import serializers
 from django.db.models import Sum
-import io
 import djoser.views
-
-
 
 from .filters import RecipeFilter, SubscriptionFilter
 from recipes.models import (FavoriteRecipe, Ingredient, Recipe,
-                                    ShoppingCart, Subscription, Tag, RecipeIngredient)
+                            ShoppingCart, Subscription, Tag, RecipeIngredient)
 from .permissions import IsOwnerOrReadOnly
 from .serializers import (
     AvatarSerializer, IngredientSerializer,
@@ -143,13 +141,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated], url_path='favorite',
             url_name='favorite')
     def favorite(self, request, pk=None):
-        return self.handle_action(request, pk, FavoriteRecipe, FavoriteSerializer)
+        return self.handle_action(request, pk, FavoriteRecipe,
+                                  FavoriteSerializer)
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthenticated], url_path='shopping_cart',
             url_name='shopping_cart')
     def shopping_cart(self, request, pk=None):
-        return self.handle_action(request, pk, ShoppingCart, ShoppingCartSerializer)
+        return self.handle_action(request, pk, ShoppingCart,
+                                  ShoppingCartSerializer)
 
     def generate_shopping_list(self, user):
         shopping_cart = ShoppingCart.objects.filter(user=user)

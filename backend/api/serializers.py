@@ -1,6 +1,5 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-
 from djoser.serializers import (
     UserSerializer as DjoserUserSerializer
 )
@@ -80,22 +79,33 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
-    id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all(), source='ingredient.id', required=True)
+    id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all(),
+                                            source='ingredient.id',
+                                            required=True)
     name = serializers.CharField(source='ingredient.name', read_only=True)
-    measurement_unit = serializers.CharField(source='ingredient.measurement_unit', read_only=True)
+    measurement_unit = serializers.CharField(
+        source='ingredient.measurement_unit',
+        read_only=True
+    )
     amount = serializers.IntegerField(min_value=1, required=True)
 
     class Meta:
         model = RecipeIngredient
         fields = ('id', 'name', 'measurement_unit', 'amount')
 
+
 class RecipeSerializer(serializers.ModelSerializer):
-    tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True, allow_empty=False)
+    tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(),
+                                              many=True,
+                                              allow_empty=False)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
     author = ProfileSerializer(read_only=True)
     image = DrfBase64ImageField()
-    ingredients = RecipeIngredientSerializer(many=True, source='recipe_ingredients', required=True, allow_empty=False, allow_null=False)
+    ingredients = RecipeIngredientSerializer(many=True,
+                                             source='recipe_ingredients',
+                                             required=True, allow_empty=False,
+                                             allow_null=False)
     text = serializers.CharField(source='description')
     name = serializers.CharField(
         source='title',
@@ -108,7 +118,8 @@ class RecipeSerializer(serializers.ModelSerializer):
             'id', 'tags', 'author', 'ingredients', 'is_favorited',
             'is_in_shopping_cart', 'name', 'image', 'text', 'cooking_time'
         )
-        read_only_fields = ('is_favorited', 'is_in_shopping_cart', 'id', 'author')
+        read_only_fields = ('is_favorited', 'is_in_shopping_cart',
+                            'id', 'author')
 
     def validate_image(self, image):
         if not image:
@@ -117,7 +128,9 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def validate_ingredients(self, ingredients):
         if len(ingredients) == 0:
-            raise serializers.ValidationError("Recipe must have at least one ingredient.")
+            raise serializers.ValidationError(
+                "Recipe must have at least one ingredient."
+            )
         unique = set()
         duplicates = []
         for ingredient_obj in ingredients:
@@ -126,12 +139,16 @@ class RecipeSerializer(serializers.ModelSerializer):
                 duplicates.append(ingredient_id)
             unique.add(ingredient_id)
         if duplicates:
-            raise serializers.ValidationError(f"Duplicate item(s): {duplicates}")
+            raise serializers.ValidationError(
+                f"Duplicate item(s): {duplicates}"
+            )
         return ingredients
 
     def validate_tags(self, tags):
         if len(tags) == 0:
-            raise serializers.ValidationError("Recipe must have at least one tag.")
+            raise serializers.ValidationError(
+                "Recipe must have at least one tag."
+            )
         unique = set()
         duplicates = []
         for tag in tags:
@@ -139,7 +156,9 @@ class RecipeSerializer(serializers.ModelSerializer):
                 duplicates.append(tag)
             unique.add(tag)
         if duplicates:
-            raise serializers.ValidationError(f"Duplicate item(s): {duplicates}")
+            raise serializers.ValidationError(
+                f"Duplicate item(s): {duplicates}"
+            )
         return tags
 
     def to_representation(self, instance):
@@ -172,8 +191,10 @@ class RecipeSerializer(serializers.ModelSerializer):
         self.validate_tags(tags_data)
 
         instance.title = validated_data.get('title', instance.title)
-        instance.description = validated_data.get('description', instance.description)
-        instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
+        instance.description = validated_data.get('description',
+                                                  instance.description)
+        instance.cooking_time = validated_data.get('cooking_time',
+                                                   instance.cooking_time)
         instance.image = validated_data.get('image', instance.image)
         instance.save()
 
