@@ -1,6 +1,7 @@
 import hashlib
 import io
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -109,8 +110,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     filterset_class = RecipeFilter
     pagination_class = LimitOffsetPagination
-    ordering_fields = ('title', 'cooking_time', 'author')
-    ordering = ('title',)
+    ordering_fields = ('name', 'cooking_time', 'author')
+    ordering = ('name',)
     filterset_fields = ('tags__slug', 'author__username',
                         'is_favorited', 'is_in_shopping_cart')
 
@@ -171,10 +172,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
             url_path='get-link')
     def get_link(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
-        original_url = request.build_absolute_uri(reverse('recipe-detail',
-                                                          args=[recipe.id]))
+        original_url = request.build_absolute_uri(
+            reverse('recipe-detail', args=[recipe.id])
+        )
         short_url = self.get_short_link(original_url)
-        return Response({'short-link': original_url + short_url})
+        recipe.short_url_hash = short_url
+        recipe.save()
+        return Response({'short-link': f'https://{settings.ALLOWED_HOSTS[0]}/s'
+                                       f'/{short_url}/'})
 
     def get_short_link(self, url):
         return hashlib.md5(url.encode()).hexdigest()[:8]

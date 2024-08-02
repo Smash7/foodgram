@@ -176,6 +176,13 @@ class Recipe(models.Model):
         null=False,
         validators=[MinValueValidator(1)]
     )
+    short_url_hash = models.CharField(
+        max_length=8,
+        unique=True,
+        blank=True,
+        null=True,
+        verbose_name='Короткая ссылка'
+    )
 
     class Meta:
         ordering = ('name',)
