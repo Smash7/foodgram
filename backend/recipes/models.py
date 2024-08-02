@@ -142,7 +142,7 @@ class Recipe(models.Model):
         related_name='recipes',
         verbose_name='Автор'
     )
-    title = models.CharField(
+    name = models.CharField(
         max_length=256,
         verbose_name='Название рецепта',
         blank=False,
@@ -178,7 +178,7 @@ class Recipe(models.Model):
     )
 
     class Meta:
-        ordering = ('title',)
+        ordering = ('name',)
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
 
@@ -199,7 +199,7 @@ class RecipeIngredient(models.Model):
     amount = models.PositiveIntegerField(validators=[MinValueValidator(1)])
 
     class Meta:
-        ordering = ('recipe__title',)
+        ordering = ('recipe__name',)
         verbose_name = 'Ингредиент рецепта'
         verbose_name_plural = 'Ингредиенты рецепта'
         constraints = [

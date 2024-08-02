@@ -5,7 +5,7 @@ from .models import FoodgramUser, Ingredient, Recipe, Tag
 
 
 class HasRecipesFilter(admin.SimpleListFilter):
-    title = 'Есть рецепты'
+    name = 'Есть рецепты'
     parameter_name = 'has_recipes'
 
     def lookups(self, request, model_admin):
@@ -23,7 +23,7 @@ class HasRecipesFilter(admin.SimpleListFilter):
 
 
 class HasSubscriptionsFilter(admin.SimpleListFilter):
-    title = 'Есть подписки'
+    name = 'Есть подписки'
     parameter_name = 'has_subscriptions'
 
     def lookups(self, request, model_admin):
@@ -41,7 +41,7 @@ class HasSubscriptionsFilter(admin.SimpleListFilter):
 
 
 class HasFollowersFilter(admin.SimpleListFilter):
-    title = 'Есть подписчики'
+    name = 'Есть подписчики'
     parameter_name = 'has_followers'
 
     def lookups(self, request, model_admin):
@@ -88,7 +88,7 @@ class TagAdmin(admin.ModelAdmin):
 
 
 class IsIngredientUsedFilter(admin.SimpleListFilter):
-    title = 'Используется в рецептах'
+    name = 'Используется в рецептах'
     parameter_name = 'is_ingredient_used'
 
     def lookups(self, request, model_admin):
@@ -114,7 +114,7 @@ class IngredientAdmin(admin.ModelAdmin):
 
 
 class CookingTimeFilter(admin.SimpleListFilter):
-    title = 'Cooking Time'
+    name = 'Cooking Time'
     parameter_name = 'cooking_time'
 
     def lookups(self, request, model_admin):
@@ -151,10 +151,10 @@ class CookingTimeFilter(admin.SimpleListFilter):
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('id', 'author', 'title', 'image_tag',
+    list_display = ('id', 'author', 'name', 'image_tag',
                     'description', 'cooking_time', 'tag_list',
                     'ingredient_list')
-    search_fields = ('id', 'author__username', 'title', 'description',
+    search_fields = ('id', 'author__username', 'name', 'description',
                      'cooking_time', 'tags__name')
     list_filter = (CookingTimeFilter,)
     empty_value_display = '-пусто-'

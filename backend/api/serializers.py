@@ -30,7 +30,6 @@ class ProfileSerializer(DjoserUserSerializer):
 
 
 class SimpleRecipeSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(source='title')
 
     class Meta:
         model = Recipe
@@ -107,8 +106,8 @@ class RecipeSerializer(serializers.ModelSerializer):
                                              allow_null=False)
     text = serializers.CharField(source='description')
     name = serializers.CharField(
-        source='title',
-        max_length=Recipe._meta.get_field('title').max_length
+        source='name',
+        max_length=Recipe._meta.get_field('name').max_length
     )
 
     class Meta:
@@ -189,7 +188,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         tags_data = validated_data.pop('tags', [])
         self.validate_tags(tags_data)
 
-        instance.title = validated_data.get('title', instance.title)
+        instance.name = validated_data.get('name', instance.name)
         instance.description = validated_data.get('description',
                                                   instance.description)
         instance.cooking_time = validated_data.get('cooking_time',
