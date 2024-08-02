@@ -122,41 +122,36 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def validate_image(self, image):
         if not image:
-            raise serializers.ValidationError("Image is required.")
+            raise serializers.ValidationError("Изображение не выбрано.")
         return image
 
     def validate_ingredients(self, ingredients):
-        if len(ingredients) == 0:
+        if not ingredients:
             raise serializers.ValidationError(
-                "Recipe must have at least one ingredient."
+                "Рецепт должен содержать хотя бы один ингредиент."
             )
-        unique = set()
-        duplicates = []
-        for ingredient_obj in ingredients:
-            ingredient_id = ingredient_obj.get('ingredient').get('id')
-            if ingredient_id in unique:
-                duplicates.append(ingredient_id)
-            unique.add(ingredient_id)
+        unique_ingredients = {ingredient_obj.get('ingredient').get('id')
+                              for ingredient_obj in ingredients}
+        duplicates = [ingredient_obj.get('ingredient').get('name')
+                      for ingredient_obj in ingredients
+                      if ingredient_obj.get('ingredient').get('id')
+                      in unique_ingredients]
         if duplicates:
             raise serializers.ValidationError(
-                f"Duplicate item(s): {duplicates}"
+                f"Дубликаты: {duplicates}"
             )
         return ingredients
 
     def validate_tags(self, tags):
-        if len(tags) == 0:
+        if not tags:
             raise serializers.ValidationError(
-                "Recipe must have at least one tag."
+                "Рецепт должен содержать хотя бы один тег."
             )
-        unique = set()
-        duplicates = []
-        for tag in tags:
-            if tag in unique:
-                duplicates.append(tag)
-            unique.add(tag)
+        unique_tags = {tag.id for tag in tags}
+        duplicates = [tag.name for tag in tags if tag.id in unique_tags]
         if duplicates:
             raise serializers.ValidationError(
-                f"Duplicate item(s): {duplicates}"
+                f"Дубликаты: {duplicates}"
             )
         return tags
 
@@ -166,13 +161,13 @@ class RecipeSerializer(serializers.ModelSerializer):
         return data
 
     def create_ingredients(self, recipe, ingredients_data):
-        RecipeIngredient.objects.bulk_create([
+        RecipeIngredient.objects.bulk_create(
             RecipeIngredient(
                 recipe=recipe,
                 ingredient=ingredient_data.pop('ingredient')['id'],
                 amount=ingredient_data.pop('amount')
             ) for ingredient_data in ingredients_data
-        ])
+        )
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop('recipe_ingredients', [])
@@ -189,12 +184,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         tags_data = validated_data.pop('tags', [])
         self.validate_tags(tags_data)
 
-        instance.name = validated_data.get('name', instance.name)
-        instance.description = validated_data.get('description',
-                                                  instance.description)
-        instance.cooking_time = validated_data.get('cooking_time',
-                                                   instance.cooking_time)
-        instance.image = validated_data.get('image', instance.image)
+        instance = super().update(instance, validated_data)
         instance.save()
 
         instance.tags.set(tags_data)
@@ -206,9 +196,8 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, recipe):
         request = self.context.get('request', None)
-        if request and request.user.is_authenticated:
-            return recipe.is_favorited(request.user)
-        return False
+        return (request and request.user.is_authenticated
+                and recipe.is_favorited(request.user))
 
     def get_is_in_shopping_cart(self, recipe):
         request = self.context.get('request', None)
