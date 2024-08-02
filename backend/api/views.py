@@ -58,7 +58,7 @@ class ProfileViewSet(djoser.views.UserViewSet):
             request.user.save()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='subscriptions')
     def list_subscriptions(self, request):
         subscriptions = self.get_queryset()
         page = self.paginate_queryset(subscriptions)
@@ -69,24 +69,23 @@ class ProfileViewSet(djoser.views.UserViewSet):
         serializer = self.get_serializer(subscriptions, many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'])
-    def subscribe(self, request, id=None):
-        author = get_object_or_404(User, id=id)
-        if author == request.user:
-            raise ValidationError('You cannot subscribe to yourself.')
-        elif Subscription.objects.filter(user=request.user,
-                                         author=author).exists():
-            raise ValidationError('You are already subscribed to this user.')
-        else:
-            subscription = Subscription.objects.create(user=request.user,
-                                                       author=author)
-        return Response(self.get_serializer(subscription.author).data,
-                        status=status.HTTP_201_CREATED)
-
-    @action(detail=True, methods=['delete'])
-    def unsubscribe(self, request, id=None):
-        get_object_or_404(User, id=id).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    @action(detail=True, methods=['post', 'delete'], url_path='subscribe')
+    def subscription(self, request, id=None):
+        if request.method == 'POST':
+            author = get_object_or_404(User, id=id)
+            if author == request.user:
+                raise ValidationError('Нельзя подписаться на самого себя.')
+            elif Subscription.objects.filter(user=request.user,
+                                             author=author).exists():
+                raise ValidationError('Вы уже подписаны на этого пользователя.')
+            else:
+                subscription = Subscription.objects.create(user=request.user,
+                                                           author=author)
+            return Response(self.get_serializer(subscription.author).data,
+                            status=status.HTTP_201_CREATED)
+        if request.method == 'DELETE':
+            get_object_or_404(Subscription, user=request.user, author_id=id).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class SubscriptionViewSet(viewsets.ModelViewSet):
