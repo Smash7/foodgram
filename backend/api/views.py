@@ -29,6 +29,7 @@ from .serializers import (
     ProfileSerializer, RecipeSerializer,
     SubscriptionSerializer, TagSerializer, SimpleRecipeSerializer
 )
+from .utils import generate_shopping_list_text
 
 User = get_user_model()
 
@@ -77,14 +78,17 @@ class ProfileViewSet(djoser.views.UserViewSet):
                 raise ValidationError('Нельзя подписаться на самого себя.')
             elif Subscription.objects.filter(user=request.user,
                                              author=author).exists():
-                raise ValidationError('Вы уже подписаны на этого пользователя.')
+                raise ValidationError(
+                    'Вы уже подписаны на этого пользователя.'
+                )
             else:
                 subscription = Subscription.objects.create(user=request.user,
                                                            author=author)
             return Response(self.get_serializer(subscription.author).data,
                             status=status.HTTP_201_CREATED)
         if request.method == 'DELETE':
-            get_object_or_404(Subscription, user=request.user, author_id=id).delete()
+            get_object_or_404(Subscription, user=request.user,
+                              author_id=id).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -110,29 +114,33 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_fields = ('tags__slug', 'author__username',
                         'is_favorited', 'is_in_shopping_cart')
 
-    def handle_action(self, request, pk, model):
+    def collect_basket(self, request, pk, model):
         recipe = get_object_or_404(Recipe, pk=pk)
         if request.method == 'POST':
             if model.objects.filter(user=request.user, recipe=recipe).exists():
                 raise ValidationError('This recipe is already in your list.')
             instance = model.objects.create(user=request.user, recipe=recipe)
-            response_serializer = SimpleRecipeSerializer(instance.recipe, context={'request': request})
-            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+            response_serializer = SimpleRecipeSerializer(
+                instance.recipe,
+                context={'request': request}
+            )
+            return Response(response_serializer.data,
+                            status=status.HTTP_201_CREATED)
         elif request.method == 'DELETE':
-            model.objects.filter(user=request.user, recipe=recipe).delete()
+            get_object_or_404(model, user=request.user, recipe=recipe).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthenticated], url_path='favorite',
             url_name='favorite')
     def favorite(self, request, pk=None):
-        return self.handle_action(request, pk, FavoriteRecipe)
+        return self.collect_basket(request, pk, FavoriteRecipe)
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthenticated], url_path='shopping_cart',
             url_name='shopping_cart')
     def shopping_cart(self, request, pk=None):
-        return self.handle_action(request, pk, ShoppingCart)
+        return self.collect_basket(request, pk, ShoppingCart)
 
     def generate_shopping_list(self, user):
         shopping_cart = ShoppingCart.objects.filter(user=user)
@@ -145,25 +153,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
             total_amount=Sum('amount')
         ).order_by('ingredient__name')
 
-        recipes = shopping_cart.values_list('recipe__title', flat=True)
-
-        date_created = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
-        header = f'Список покупок составлен: {date_created}\n'
-        product_header = 'Продукты:\n'
-        products = '\n'.join(
-            [
-                f'{idx + 1}. {item["ingredient__name"].capitalize()}'
-                f' ({item["ingredient__measurement_unit"]})'
-                f' -- {item["total_amount"]}'
-                for idx, item in enumerate(ingredient_quantities)]
+        return generate_shopping_list_text(
+            ingredient_quantities,
+            shopping_cart.values_list('recipe__name', flat=True)
         )
-        recipe_header = '\n\nРецепты:\n'
-        recipes_list = '\n'.join(
-            [f'{idx + 1}. {recipe}' for idx, recipe in enumerate(recipes)]
-        )
-
-        return '\n'.join([header, product_header, products,
-                          recipe_header, recipes_list])
 
     @action(detail=False, methods=['get'],
             permission_classes=[IsAuthenticated],
@@ -171,12 +164,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             url_name='download_shopping_cart')
     def download_shopping_cart(self, request):
         shopping_list_text = self.generate_shopping_list(request.user)
-
-        buffer = io.BytesIO()
-        buffer.write(shopping_list_text.encode('utf-8'))
-        buffer.seek(0)
-
-        return FileResponse(buffer, as_attachment=True,
+        return FileResponse(shopping_list_text, as_attachment=True,
                             filename='shopping_list.txt')
 
     @action(detail=True, methods=['get'], permission_classes=[AllowAny],
