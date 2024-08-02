@@ -1,0 +1,98 @@
+[
+  {
+    "model": "recipes.tag",
+    "pk": 1,
+    "fields": {
+      "name": "breakfast",
+      "slug": "breakfast"
+    }
+  },
+  {
+    "model": "recipes.tag",
+    "pk": 2,
+    "fields": {
+      "name": "lunch",
+      "slug": "lunch"
+    }
+  },
+  {
+    "model": "recipes.tag",
+    "pk": 3,
+    "fields": {
+      "name": "dinner",
+      "slug": "dinner"
+    }
+  },
+  {
+    "model": "recipes.tag",
+    "pk": 4,
+    "fields": {
+      "name": "dessert",
+      "slug": "dessert"
+    }
+  },
+  {
+    "model": "recipes.tag",
+    "pk": 5,
+    "fields": {
+      "name": "snack",
+      "slug": "snack"
+    }
+  },
+  {
+    "model": "recipes.tag",
+    "pk": 6,
+    "fields": {
+      "name": "appetizer",
+      "slug": "appetizer"
+    }
+  },
+  {
+    "model": "recipes.tag",
+    "pk": 7,
+    "fields": {
+      "name": "drink",
+      "slug": "drink"
+    }
+  },
+  {
+    "model": "recipes.tag",
+    "pk": 8,
+    "fields": {
+      "name": "side",
+      "slug": "side"
+    }
+  },
+  {
+    "model": "recipes.tag",
+    "pk": 9,
+    "fields": {
+      "name": "main",
+      "slug": "main"
+    }
+  },
+  {
+    "model": "recipes.tag",
+    "pk": 10,
+    "fields": {
+      "name": "salad",
+      "slug": "salad"
+    }
+  },
+  {
+    "model": "recipes.tag",
+    "pk": 11,
+    "fields": {
+      "name": "soup",
+      "slug": "soup"
+    }
+  },
+  {
+    "model": "recipes.tag",
+    "pk": 12,
+    "fields": {
+      "name": "bread",
+      "slug": "bread"
+    }
+  }
+]
