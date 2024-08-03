@@ -1,4 +1,4 @@
-from dhango.conf import settings
+from django.conf import settings
 from django.contrib import admin
 from django.utils.html import format_html
 
@@ -21,7 +21,6 @@ class HasRecipesFilter(admin.SimpleListFilter):
             isnull_value = value == 'no'
             return queryset.filter(recipes__isnull=isnull_value).distinct()
         return queryset
-
 
 
 class HasSubscriptionsFilter(admin.SimpleListFilter):
@@ -125,8 +124,10 @@ class CookingTimeFilter(admin.SimpleListFilter):
         return (
             (
                 label, settings.COOKING_TIME_MEANS[label]
-                .format(self._count_recipes(request,
-                                            *settings.COOKING_TIME_RANGE))
+                .format(self._count_recipes(
+                    request,
+                    *settings.COOKING_TIME_RANGE[label]
+                ))
             )
             for label in labels)
 
@@ -144,14 +145,48 @@ class CookingTimeFilter(admin.SimpleListFilter):
         )).count()
 
 
+class RecipeAuthorFilter(admin.SimpleListFilter):
+    title = 'Автор рецепта'
+    parameter_name = 'author'
+
+    def lookups(self, request, model_admin):
+        return (
+            (author.id, author.username)
+            for author in FoodgramUser.objects.filter(recipes__isnull=False)
+            .distinct()
+        )
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value:
+            return queryset.filter(author_id=value)
+        return queryset
+
+
+class RecipeTagFilter(admin.SimpleListFilter):
+    title = 'Тег рецепта'
+    parameter_name = 'tag'
+
+    def lookups(self, request, model_admin):
+        return (
+            (tag.id, tag.name)
+            for tag in Tag.objects.filter(recipes__isnull=False).distinct()
+        )
+
+    def queryset(self, request, queryset):
+        value = self.value()
+        if value:
+            return queryset.filter(tags__id=value)
+        return queryset
+
+
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('id', 'author', 'name', 'image_tag',
-                    'description', 'cooking_time', 'tag_list',
-                    'ingredient_list')
-    search_fields = ('id', 'author__username', 'name', 'description',
+                    'cooking_time', 'tag_list', 'ingredient_list')
+    search_fields = ('id', 'author__username', 'name',
                      'cooking_time', 'tags__name')
-    list_filter = (CookingTimeFilter,)
+    list_filter = (CookingTimeFilter, RecipeAuthorFilter, RecipeTagFilter)
     empty_value_display = '-пусто-'
     filter_horizontal = ('tags', 'ingredients')
 
