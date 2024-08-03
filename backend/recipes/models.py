@@ -63,8 +63,8 @@ class FoodgramUser(AbstractUser):
     def subscription_count(self):
         return self.authors.count()
 
-    def follower_count(self):
-        return self.follower.count()
+    def followers_count(self):
+        return self.followers.count()
 
     def __str__(self):
         return self.username
@@ -128,6 +128,9 @@ class Tag(models.Model):
         unique=True,
         verbose_name='Slug'
     )
+
+    def recipe__count(self):
+        return self.recipes.count()
 
     class Meta:
         ordering = ('name',)

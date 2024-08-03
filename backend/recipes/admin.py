@@ -1,3 +1,4 @@
+from dhango.conf import settings
 from django.contrib import admin
 from django.utils.html import format_html
 
@@ -6,7 +7,7 @@ from .models import FoodgramUser, Ingredient, Recipe, Tag
 
 class HasRecipesFilter(admin.SimpleListFilter):
     title = 'Есть рецепты'
-    parameter_title = 'has_recipes'
+    parameter_name = 'has_recipes'
 
     def lookups(self, request, model_admin):
         return (
@@ -15,16 +16,17 @@ class HasRecipesFilter(admin.SimpleListFilter):
         )
 
     def queryset(self, request, queryset):
-        if self.value() == 'yes':
-            return queryset.filter(recipes__isnull=False).distinct()
-        if self.value() == 'no':
-            return queryset.filter(recipes__isnull=True)
+        value = self.value()
+        if value in ('yes', 'no'):
+            isnull_value = value == 'no'
+            return queryset.filter(recipes__isnull=isnull_value).distinct()
         return queryset
+
 
 
 class HasSubscriptionsFilter(admin.SimpleListFilter):
     title = 'Есть подписки'
-    parameter_title = 'has_subscriptions'
+    parameter_name = 'has_subscriptions'
 
     def lookups(self, request, model_admin):
         return (
@@ -33,16 +35,16 @@ class HasSubscriptionsFilter(admin.SimpleListFilter):
         )
 
     def queryset(self, request, queryset):
-        if self.value() == 'yes':
-            return queryset.filter(follower__isnull=False).distinct()
-        if self.value() == 'no':
-            return queryset.filter(follower__isnull=True)
+        value = self.value()
+        if value in ('yes', 'no'):
+            isnull_value = value == 'no'
+            return queryset.filter(followers__isnull=isnull_value).distinct()
         return queryset
 
 
 class HasFollowersFilter(admin.SimpleListFilter):
     title = 'Есть подписчики'
-    parameter_title = 'has_followers'
+    parameter_name = 'has_followers'
 
     def lookups(self, request, model_admin):
         return (
@@ -51,10 +53,10 @@ class HasFollowersFilter(admin.SimpleListFilter):
         )
 
     def queryset(self, request, queryset):
-        if self.value() == 'yes':
-            return queryset.filter(following__isnull=False).distinct()
-        if self.value() == 'no':
-            return queryset.filter(following__isnull=True)
+        value = self.value()
+        if value in ('yes', 'no'):
+            isnull_value = value == 'no'
+            return queryset.filter(authors__isnull=isnull_value).distinct()
         return queryset
 
 
@@ -62,7 +64,7 @@ class HasFollowersFilter(admin.SimpleListFilter):
 class FoodgramUserAdmin(admin.ModelAdmin):
     list_display = ('id', 'username', 'email', 'first_name', 'last_name',
                     'is_staff', 'is_active', 'recipe_count',
-                    'subscription_count', 'follower_count')
+                    'subscription_count', 'followers_count')
     search_fields = ('id', 'username', 'email', 'first_name', 'last_name')
     list_filter = (HasRecipesFilter, HasSubscriptionsFilter,
                    HasFollowersFilter)
@@ -81,10 +83,9 @@ class FoodgramUserAdmin(admin.ModelAdmin):
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'slug')
+    list_display = ('id', 'name', 'slug', 'recipe__count')
     search_fields = ('id', 'name', 'slug')
     empty_value_display = '-пусто-'
-    ordering = ('id',)
 
 
 class IsIngredientUsedFilter(admin.SimpleListFilter):
@@ -98,10 +99,12 @@ class IsIngredientUsedFilter(admin.SimpleListFilter):
         )
 
     def queryset(self, request, queryset):
-        if self.value() == 'yes':
-            return queryset.filter(ingredients__isnull=False).distinct()
-        if self.value() == 'no':
-            return queryset.filter(ingredients__isnull=True)
+        value = self.value()
+        if value in ('yes', 'no'):
+            isnull_value = value == 'no'
+            return queryset.filter(
+                recipe_ingredients__isnull=isnull_value
+            ).distinct()
         return queryset
 
 
@@ -114,39 +117,31 @@ class IngredientAdmin(admin.ModelAdmin):
 
 
 class CookingTimeFilter(admin.SimpleListFilter):
-    title = 'Cooking Time'
-    parameter_title = 'cooking_time'
+    title = 'Время приготовления'
+    parameter_name = 'cooking_time'
 
     def lookups(self, request, model_admin):
+        labels = settings.COOKING_TIME_RANGE.keys()
         return (
-            ('fast', 'быстрее 15 мин ({})'.format(
-                self._count_recipes(request, 0, 15)
-            )),
-            ('medium', 'быстрее 30 мин ({})'.format(
-                self._count_recipes(request, 15, 30)
-            )),
-            ('long', 'долго ({})'.format(
-                self._count_recipes(request, 30, None)
-            )),
-        )
+            (
+                label, settings.COOKING_TIME_MEANS[label]
+                .format(self._count_recipes(request,
+                                            *settings.COOKING_TIME_RANGE))
+            )
+            for label in labels)
 
     def queryset(self, request, queryset):
         value = self.value()
-        if value == 'fast':
-            return queryset.filter(cooking_time__lt=15)
-        if value == 'medium':
-            return queryset.filter(cooking_time__gte=15, cooking_time__lt=30)
-        if value == 'long':
-            return queryset.filter(cooking_time__gte=30)
-        return queryset
+        if not settings.COOKING_TIME_RANGE.get(value, None):
+            return queryset
+        return queryset.filter(
+            cooking_time__range=settings.COOKING_TIME_RANGE[value]
+        )
 
     def _count_recipes(self, request, min_time, max_time):
-        queryset = self.queryset(request, Recipe.objects.all())
-        if min_time is not None:
-            queryset = queryset.filter(cooking_time__gte=min_time)
-        if max_time is not None:
-            queryset = queryset.filter(cooking_time__lt=max_time)
-        return queryset.count()
+        return self.queryset(request, Recipe.objects.filter(
+            cooking_time__range=(min_time, max_time)
+        )).count()
 
 
 @admin.register(Recipe)
