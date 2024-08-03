@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib import admin
+from django.utils.safestring import mark_safe
 from django.utils.html import format_html
 
 from .models import FoodgramUser, Ingredient, Recipe, Tag
@@ -190,18 +191,23 @@ class RecipeAdmin(admin.ModelAdmin):
     empty_value_display = '-пусто-'
     filter_horizontal = ('tags', 'ingredients')
 
+    @admin.display(description='Ингредиенты')
     def ingredient_list(self, obj):
-        return (', '.join(ingredient.name for
-                          ingredient in obj.ingredients.all()))
+        return mark_safe('<br>'.join(
+            f'{ingredient.name}'
+            f' {ingredient.recipe_ingredients.get(recipe=obj).amount}'
+            f' {ingredient.measurement_unit}'
+            for ingredient in obj.ingredients.all()
+        ))
 
+    @admin.display(description='Тэги')
     def tag_list(self, obj):
-        return ', '.join(tag.name for tag in obj.tags.all())
+        return mark_safe('<br>'.join(tag.name for tag in obj.tags.all()))
 
+    @admin.display(description='Изображение')
     def image_tag(self, obj):
         if obj.image:
-            return format_html(
-                '<img src="{}" style="max-height: 100px;'
-                ' max-width: 100px;" />', obj.image.url)
+            return mark_safe(
+                f'<img src="{obj.image.url}" style="max-height: 100px;'
+                ' max-width: 100px;" />')
         return '-'
-
-    image_tag.short_description = 'Image'
