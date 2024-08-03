@@ -77,16 +77,18 @@ class ProfileViewSet(djoser.views.UserViewSet):
             author = get_object_or_404(User, id=id)
             if author == request.user:
                 raise ValidationError('Нельзя подписаться на самого себя.')
-            elif Subscription.objects.filter(user=request.user,
-                                             author=author).exists():
+
+            subscription, created = Subscription.objects.get_or_create(
+                user=request.user,
+                author=author
+            )
+            if not created:
                 raise ValidationError(
                     'Вы уже подписаны на этого пользователя.'
                 )
-            else:
-                subscription = Subscription.objects.create(user=request.user,
-                                                           author=author)
             return Response(self.get_serializer(subscription.author).data,
                             status=status.HTTP_201_CREATED)
+
         if request.method == 'DELETE':
             get_object_or_404(Subscription, user=request.user,
                               author_id=id).delete()
