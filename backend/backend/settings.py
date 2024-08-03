@@ -14,6 +14,9 @@ COOKING_TIME_RANGE = {
     'medium': (15, 30),
     'long': (30, 10**10)
 }
+AUTH_USER_PATH = 'me'
+MIN_COOKING_TIME = 1
+MIN_INGREDIENT_AMOUNT = 1
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.

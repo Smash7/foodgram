@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.contrib import admin
+from django.db.models import Count
 from django.utils.safestring import mark_safe
-from django.utils.html import format_html
 
 from .models import FoodgramUser, Ingredient, Recipe, Tag
 
@@ -62,9 +62,11 @@ class HasFollowersFilter(admin.SimpleListFilter):
 
 @admin.register(FoodgramUser)
 class FoodgramUserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'username', 'email', 'first_name', 'last_name',
-                    'is_staff', 'is_active', 'recipe_count',
-                    'subscription_count', 'followers_count')
+    list_display = (
+        'id', 'username', 'email', 'first_name', 'last_name',
+        'is_staff', 'is_active', 'get_recipe_count',
+        'get_subscription_count', 'get_follower_count'
+    )
     search_fields = ('id', 'username', 'email', 'first_name', 'last_name')
     list_filter = (HasRecipesFilter, HasSubscriptionsFilter,
                    HasFollowersFilter)
@@ -79,6 +81,30 @@ class FoodgramUserAdmin(admin.ModelAdmin):
             'fields': ('is_staff', 'is_active')
         }),
     )
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        queryset = queryset.annotate(
+            recipe_count=Count('recipes'),
+            subscription_count=Count('authors'),
+            follower_count=Count('followers')
+        )
+        return queryset
+
+    def get_recipe_count(self, obj):
+        return obj.recipe_count
+
+    get_recipe_count.short_description = 'Количество рецептов'
+
+    def get_subscription_count(self, obj):
+        return obj.subscription_count
+
+    get_subscription_count.short_description = 'Количество подписок'
+
+    def get_follower_count(self, obj):
+        return obj.follower_count
+
+    get_follower_count.short_description = 'Количество подписчиков'
 
 
 @admin.register(Tag)
