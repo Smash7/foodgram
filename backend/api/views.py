@@ -1,5 +1,3 @@
-import hashlib
-
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
@@ -51,10 +49,9 @@ class ProfileViewSet(djoser.views.UserViewSet):
             serializer.is_valid(raise_exception=True)
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
-        elif request.method == 'DELETE':
-            request.user.avatar = None
-            request.user.save()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        request.user.avatar = None
+        request.user.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'], url_path='subscriptions')
     def list_subscriptions(self, request):
@@ -85,20 +82,9 @@ class ProfileViewSet(djoser.views.UserViewSet):
             return Response(self.get_serializer(subscription.author).data,
                             status=status.HTTP_201_CREATED)
 
-        if request.method == 'DELETE':
-            get_object_or_404(Subscription, user=request.user,
-                              author_id=id).delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class SubscriptionViewSet(viewsets.ModelViewSet):
-    serializer_class = SubscriptionSerializer
-    permission_classes = (IsAuthenticated,)
-    filter_backends = (DjangoFilterBackend,)
-    filterset_class = SubscriptionFilter
-
-    def get_queryset(self):
-        return User.objects.filter(authors__user=self.request.user)
+        get_object_or_404(Subscription, user=request.user,
+                          author_id=id).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -113,39 +99,39 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_fields = ('tags__slug', 'author__username',
                         'is_favorited', 'is_in_shopping_cart')
 
-    def collect_basket(self, request, pk, model):
+    def add_recipe_to_basket(self, request, pk, model):
         recipe = get_object_or_404(Recipe, pk=pk)
         if request.method == 'POST':
-            if model.objects.filter(user=request.user, recipe=recipe).exists():
+            obj, created = model.objects.get_or_create(user=request.user,
+                                                       recipe=recipe)
+            if not created:
                 raise ValidationError('This recipe is already in your list.')
-            instance = model.objects.create(user=request.user, recipe=recipe)
-            response_serializer = SimpleRecipeSerializer(
-                instance.recipe,
-                context={'request': request}
+            return Response(
+                SimpleRecipeSerializer(recipe,
+                                       context={'request': request}).data,
+                status=status.HTTP_201_CREATED
             )
-            return Response(response_serializer.data,
-                            status=status.HTTP_201_CREATED)
         elif request.method == 'DELETE':
-            get_object_or_404(model, user=request.user, recipe=recipe).delete()
+            model.objects.filter(user=request.user, recipe=recipe).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthenticated], url_path='favorite',
             url_name='favorite')
     def favorite(self, request, pk=None):
-        return self.collect_basket(request, pk, FavoriteRecipe)
+        return self.add_recipe_to_basket(request, pk, FavoriteRecipe)
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthenticated], url_path='shopping_cart',
             url_name='shopping_cart')
     def shopping_cart(self, request, pk=None):
-        return self.collect_basket(request, pk, ShoppingCart)
+        return self.add_recipe_to_basket(request, pk, ShoppingCart)
 
     def generate_shopping_list(self, user):
-        shopping_cart = ShoppingCart.objects.filter(user=user)
+        shopping_cart = ShoppingCart.objects.filter(user=user).all()
 
         ingredient_quantities = RecipeIngredient.objects.filter(
-            recipe__in=[item.recipe for item in shopping_cart]
+            recipe__in=[cart.recipe for cart in shopping_cart]
         ).values(
             'ingredient__name', 'ingredient__measurement_unit'
         ).annotate(
@@ -154,7 +140,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         return generate_shopping_list_text(
             ingredient_quantities,
-            shopping_cart.values_list('recipe__name', flat=True)
+            shopping_cart
         )
 
     @action(detail=False, methods=['get'],
@@ -162,25 +148,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
             url_path='download_shopping_cart',
             url_name='download_shopping_cart')
     def download_shopping_cart(self, request):
-        shopping_list_text = self.generate_shopping_list(request.user)
-        return FileResponse(shopping_list_text, as_attachment=True,
+        return FileResponse(
+            self.generate_shopping_list(request.user),
+                            as_attachment=True,
                             filename='shopping_list.txt')
 
     @action(detail=True, methods=['get'], permission_classes=[AllowAny],
             url_path='get-link')
     def get_link(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
-        original_url = request.build_absolute_uri(
-            reverse('recipe-detail', args=[recipe.id])
-        )
-        short_url = self.get_short_link(original_url)
-        recipe.short_url_hash = short_url
-        recipe.save()
-        return Response({'short-link': f'https://{settings.ALLOWED_HOSTS[0]}/s'
-                                       f'/{short_url}/'})
-
-    def get_short_link(self, url):
-        return hashlib.md5(url.encode()).hexdigest()[:8]
+        short_link = request.build_absolute_uri(reverse(
+            'short-link-redirect', args=[recipe.short_url_hash()]
+        ))
+        return Response({'short-link': short_link})
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):

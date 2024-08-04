@@ -143,18 +143,15 @@ class Recipe(models.Model):
         verbose_name='Время приготовления (минуты)',
         validators=[MinValueValidator(settings.MIN_COOKING_TIME)]
     )
-    short_url_hash = models.CharField(
-        max_length=8,
-        unique=True,
-        blank=True,
-        null=True,
-        verbose_name='Короткая ссылка'
-    )
 
     class Meta:
         ordering = ('name',)
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
+
+    def short_url_hash(self):
+        import hashlib
+        return hashlib.md5(str(self.id).encode()).hexdigest()[:8]
 
 
 class RecipeIngredient(models.Model):
