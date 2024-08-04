@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404, redirect, reverse
+from django.shortcuts import get_object_or_404, redirect
 from rest_framework.views import View
 
 from .models import Recipe

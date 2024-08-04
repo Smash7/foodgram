@@ -88,15 +88,15 @@ class FoodgramUserAdmin(admin.ModelAdmin):
             follower_count=Count('followers')
         )
 
-    @admin.display(description='Количество рецептов')
+    @admin.display(description='Рецепты')
     def get_recipe_count(self, user):
         return user.recipe_count
 
-    @admin.display(description='Количество подписок')
+    @admin.display(description='Подписки')
     def get_subscription_count(self, user):
         return user.subscription_count
 
-    @admin.display(description='Количество подписчиков')
+    @admin.display(description='Подписчики')
     def get_follower_count(self, user):
         return user.follower_count
 

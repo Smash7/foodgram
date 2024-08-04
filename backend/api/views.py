@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
@@ -15,14 +14,14 @@ from rest_framework.exceptions import ValidationError
 from django.db.models import Sum
 import djoser.views
 
-from .filters import RecipeFilter, SubscriptionFilter, IngredientFilter
+from .filters import RecipeFilter, IngredientFilter
 from recipes.models import (FavoriteRecipe, Ingredient, Recipe,
                             ShoppingCart, Subscription, Tag, RecipeIngredient)
 from .permissions import IsOwnerOrReadOnly
 from .serializers import (
     AvatarSerializer, IngredientSerializer,
     ProfileSerializer, RecipeSerializer,
-    SubscriptionSerializer, TagSerializer, SimpleRecipeSerializer
+    TagSerializer, SimpleRecipeSerializer
 )
 from .utils import generate_shopping_list_text
 
@@ -150,15 +149,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         return FileResponse(
             self.generate_shopping_list(request.user),
-                            as_attachment=True,
-                            filename='shopping_list.txt')
+            as_attachment=True,
+            filename='shopping_list.txt'
+        )
 
     @action(detail=True, methods=['get'], permission_classes=[AllowAny],
             url_path='get-link')
     def get_link(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
         short_link = request.build_absolute_uri(reverse(
-            'short-link-redirect', args=[recipe.short_url_hash]
+            'shortener:short-link-redirect',
+            args=[recipe.short_url_hash]
         ))
         return Response({'short-link': short_link})
 
