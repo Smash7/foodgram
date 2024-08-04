@@ -101,8 +101,7 @@ class Tag(models.Model):
     slug = models.SlugField(
         max_length=32,
         unique=True,
-        verbose_name='Slug',
-        validators=[validators.validate_slug]
+        verbose_name='Slug'
     )
 
     class Meta:
@@ -162,11 +161,15 @@ class Recipe(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.short_url_hash:
-            import hashlib
-            self.short_url_hash = hashlib.md5(
-                str(self.pk).encode()
-            ).hexdigest()[:8]
+            self.short_url_hash = self.generate_short_url_hash()
         super().save(*args, **kwargs)
+
+    def generate_short_url_hash(self):
+        import hashlib
+        hash_value = hashlib.md5(str(self.id).encode()).hexdigest()[:8]
+        while Recipe.objects.filter(short_url_hash=hash_value).exists():
+            hash_value = hashlib.md5(str(hash_value).encode()).hexdigest()[:8]
+        return hash_value
 
     def __str__(self):
         return self.name

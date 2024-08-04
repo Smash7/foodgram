@@ -103,9 +103,12 @@ class FoodgramUserAdmin(admin.ModelAdmin):
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'slug', 'recipe__count')
+    list_display = ('id', 'name', 'slug', 'get_recipe_count')
     search_fields = ('name', 'slug')
     empty_value_display = '-пусто-'
+
+    def get_recipe_count(self, tag):
+        return tag.recipes.count()
 
 
 class IsIngredientUsedFilter(admin.SimpleListFilter):
@@ -163,41 +166,6 @@ class CookingTimeFilter(admin.SimpleListFilter):
 
     def filter_by_cooking_time(self, queryset, min_time, max_time):
         return queryset.filter(cooking_time__range=(min_time, max_time))
-
-
-# class RecipeAuthorFilter(admin.SimpleListFilter):
-#     title = 'Автор рецепта'
-#     parameter_name = 'author'
-#
-#     def lookups(self, request, model_admin):
-#         return (
-#             (author.id, author.username)
-#             for author in FoodgramUser.objects.filter(recipes__isnull=False)
-#             .distinct()
-#         )
-#
-#     def queryset(self, request, queryset):
-#         value = self.value()
-#         if value:
-#             return queryset.filter(author_id=value)
-#         return queryset
-#
-#
-# class RecipeTagFilter(admin.SimpleListFilter):
-#     title = 'Тег рецепта'
-#     parameter_name = 'tag'
-#
-#     def lookups(self, request, model_admin):
-#         return (
-#             (tag.id, tag.name)
-#             for tag in Tag.objects.filter(recipes__isnull=False).distinct()
-#         )
-#
-#     def queryset(self, request, queryset):
-#         value = self.value()
-#         if value:
-#             return queryset.filter(tags__id=value)
-#         return queryset
 
 
 @admin.register(Recipe)
