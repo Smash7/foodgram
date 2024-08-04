@@ -5,6 +5,7 @@ Foodgram - это веб-приложение для публикации рец
 ## Автор
 
 - **ФИО**: Мартынов Евгений Алексеевич
+- [LinkedIn](https://www.linkedin.com/in/eugene-martynov/)
 
 ## Техно-стек
 
@@ -93,7 +94,47 @@ docker-compose up -d
 docker-compose down
 ```
 
-## Доступ к приложению
+## Доступ к Docker приложению
 
 - **Фронтенд веб-приложения**: [http://localhost](http://localhost)
 - **Спецификация API**: [http://localhost/api/docs/](http://localhost/api/docs/)
+
+## Запуск без Docker
+
+### Установка зависимостей
+
+Перейдите в папку `backend` и установите зависимости:
+
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+### Применение миграций и сбор статики
+
+Примените миграции и соберите статику:
+
+```bash
+python manage.py migrate
+python manage.py collectstatic --noinput
+```
+
+### Создание суперпользователя
+
+Создайте суперпользователя для доступа к админ панели:
+
+```bash
+python manage.py createsuperuser
+```
+
+### Запуск сервера
+
+Запустите сервер командой:
+
+```bash
+python manage.py runserver
+```
+
+### Доступ к приложению
+
+- **API**: [http://localhost:8000/api/](http://localhost:8000/api/)
