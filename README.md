@@ -119,6 +119,16 @@ python manage.py migrate
 python manage.py collectstatic --noinput
 ```
 
+### Загрузка ингредиентов в базу данных
+
+Для загрузки данных ингредиентов из файла ingredients.json, выполните следующую команду:
+
+```bash
+python manage.py import_ingredients
+```
+
+Эта команда запустит пользовательскую команду Django, которая загрузит данные из файла `data/ingredients.json` в базу данных.
+
 ### Создание суперпользователя
 
 Создайте суперпользователя для доступа к админ панели:

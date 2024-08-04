@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator
 from django.db import models
 
+from . import constants
 from . import validators
 
 
@@ -141,7 +142,7 @@ class Recipe(models.Model):
     )
     cooking_time = models.PositiveIntegerField(
         verbose_name='Время приготовления (минуты)',
-        validators=[MinValueValidator(settings.MIN_COOKING_TIME)]
+        validators=[MinValueValidator(constants.MIN_COOKING_TIME)]
     )
     short_url_hash = models.CharField(
         max_length=8,
@@ -182,7 +183,7 @@ class RecipeIngredient(models.Model):
         on_delete=models.CASCADE
     )
     amount = models.PositiveIntegerField(
-        validators=[MinValueValidator(settings.MIN_INGREDIENT_AMOUNT)],
+        validators=[MinValueValidator(constants.MIN_INGREDIENT_AMOUNT)],
         verbose_name='Количество'
     )
 

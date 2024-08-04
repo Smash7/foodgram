@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.db.models import Count
 from django.utils.safestring import mark_safe
 
+from . import constants
 from .models import FoodgramUser, Ingredient, Recipe, Tag
 
 
@@ -147,23 +148,23 @@ class CookingTimeFilter(admin.SimpleListFilter):
     parameter_name = 'cooking_time'
 
     def lookups(self, request, model_admin):
-        labels = settings.COOKING_TIME_RANGE.keys()
+        labels = constants.COOKING_TIME_RANGE.keys()
         return (
             (
-                label, settings.COOKING_TIME_MEANS[label]
+                label, constants.COOKING_TIME_MEANS[label]
                 .format(self._count_recipes(
                     request,
-                    *settings.COOKING_TIME_RANGE[label]
+                    *constants.COOKING_TIME_RANGE[label]
                 ))
             )
             for label in labels)
 
     def queryset(self, request, queryset):
         value = self.value()
-        if not settings.COOKING_TIME_RANGE.get(value, None):
+        if not constants.COOKING_TIME_RANGE.get(value):
             return queryset
         return queryset.filter(
-            cooking_time__range=settings.COOKING_TIME_RANGE[value]
+            cooking_time__range=constants.COOKING_TIME_RANGE[value]
         )
 
     def _count_recipes(self, request, min_time, max_time):
@@ -218,12 +219,13 @@ class RecipeAdmin(admin.ModelAdmin):
     filter_horizontal = ('tags', 'ingredients')
 
     @admin.display(description='Ингредиенты')
-    def ingredient_list(self, obj):
+    def ingredient_list(self, recipe):
         return mark_safe('<br>'.join(
             f'{ingredient.name}'
-            f' {ingredient.recipe_ingredients.get(recipe=obj).amount}'
+            f''' {ingredient.recipe_ingredients
+            .filter(recipe=recipe).first().amount}'''
             f' {ingredient.measurement_unit}'
-            for ingredient in obj.ingredients.all()
+            for ingredient in recipe.ingredients.all()
         ))
 
     @admin.display(description='Тэги')

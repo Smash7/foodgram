@@ -8,6 +8,7 @@ from djoser.serializers import (
 )
 from drf_extra_fields.fields import Base64ImageField as DrfBase64ImageField
 
+from recipes import constants
 from recipes.models import (
     FavoriteRecipe, Ingredient, Recipe,
     RecipeIngredient, ShoppingCart, Subscription, Tag
@@ -91,8 +92,10 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
         source='ingredient.measurement_unit',
         read_only=True
     )
-    amount = serializers.IntegerField(min_value=settings.INGREDIENT_MIN_AMOUNT,
-                                      required=True)
+    amount = serializers.IntegerField(
+        min_value=constants.MIN_INGREDIENT_AMOUNT,
+        required=True
+    )
 
     class Meta:
         model = RecipeIngredient
