@@ -1,22 +1,10 @@
-from dotenv import load_dotenv
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 # Constants
-INGREDIENT_MIN_AMOUNT = 1
-COOKING_TIME_MEANS = {
-    'fast': 'быстрее 15 минут ({})',
-    'medium': 'быстрее 30 минут ({})',
-    'long': 'дольше 30 минут ({})'
-}
-COOKING_TIME_RANGE = {
-    'fast': (0, 15),
-    'medium': (15, 30),
-    'long': (30, 10**10)
-}
 AUTH_USER_PATH = 'me'
-MIN_COOKING_TIME = 1
-MIN_INGREDIENT_AMOUNT = 1
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -155,7 +143,7 @@ DJOSER = {
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru-RU'
 
 TIME_ZONE = 'UTC'
 

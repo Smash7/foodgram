@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator
 from django.db import models
 
+from . import constants
 from . import validators
 
 
@@ -88,6 +89,9 @@ class Ingredient(models.Model):
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
 
+    def __str__(self):
+        return self.name
+
 
 class Tag(models.Model):
     name = models.CharField(
@@ -97,17 +101,16 @@ class Tag(models.Model):
     slug = models.SlugField(
         max_length=32,
         unique=True,
-        verbose_name='Slug',
-        validators=[validators.validate_slug]
+        verbose_name='Slug'
     )
-
-    def recipe__count(self):
-        return self.recipes.count()
 
     class Meta:
         ordering = ('name',)
         verbose_name = 'Тэг'
         verbose_name_plural = 'Тэги'
+
+    def __str__(self):
+        return self.name
 
 
 class Recipe(models.Model):
@@ -141,20 +144,35 @@ class Recipe(models.Model):
     )
     cooking_time = models.PositiveIntegerField(
         verbose_name='Время приготовления (минуты)',
-        validators=[MinValueValidator(settings.MIN_COOKING_TIME)]
+        validators=[MinValueValidator(constants.MIN_COOKING_TIME)]
     )
     short_url_hash = models.CharField(
         max_length=8,
         unique=True,
+        verbose_name='Короткая ссылка',
         blank=True,
-        null=True,
-        verbose_name='Короткая ссылка'
+        null=True
     )
 
     class Meta:
         ordering = ('name',)
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
+
+    def save(self, *args, **kwargs):
+        if not self.short_url_hash:
+            self.short_url_hash = self.generate_short_url_hash()
+        super().save(*args, **kwargs)
+
+    def generate_short_url_hash(self):
+        import hashlib
+        hash_value = hashlib.md5(str(self.id).encode()).hexdigest()[:8]
+        while Recipe.objects.filter(short_url_hash=hash_value).exists():
+            hash_value = hashlib.md5(str(hash_value).encode()).hexdigest()[:8]
+        return hash_value
+
+    def __str__(self):
+        return self.name
 
 
 class RecipeIngredient(models.Model):
@@ -171,7 +189,7 @@ class RecipeIngredient(models.Model):
         on_delete=models.CASCADE
     )
     amount = models.PositiveIntegerField(
-        validators=[MinValueValidator(settings.MIN_INGREDIENT_AMOUNT)],
+        validators=[MinValueValidator(constants.MIN_INGREDIENT_AMOUNT)],
         verbose_name='Количество'
     )
 
@@ -195,7 +213,7 @@ class UserRecipeRelation(models.Model):
         Recipe,
         on_delete=models.CASCADE,
         verbose_name='Рецепт',
-        related_name='%(class)s_recipe'
+        related_name='%(class)s_set'
     )
 
     class Meta:
