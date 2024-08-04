@@ -2,7 +2,8 @@ import django_filters
 from django.contrib.auth import get_user_model
 from django.db.models import Count
 
-from recipes.models import Recipe, Tag
+from recipes.models import Recipe, Tag, Ingredient
+
 User = get_user_model()
 
 
@@ -17,23 +18,30 @@ class RecipeFilter(django_filters.rest_framework.FilterSet):
         field_name='tags__slug',
         to_field_name='slug',
         queryset=Tag.objects.all(),
-        conjoined=False
-    )
+        conjoined=False,
 
+    )
     class Meta:
         model = Recipe
         fields = ['tags', 'author', 'is_favorited', 'is_in_shopping_cart']
 
     def filter_is_favorited(self, recipes, name, value):
         user = self.request.user
+        if not user.is_authenticated:
+            return recipes
         if value:
-            return recipes.filter(recipe_favorites__user=user)
+            return recipes.filter(favoriterecipe_recipe__user=user)
         return recipes
 
     def filter_is_in_shopping_cart(self, queryset, name, value):
         user = self.request.user
         if value:
-            return queryset.filter(recipes_in_shopping_cart__user=user)
+            return queryset.filter(shoppingcart_recipe__user=user)
+        return queryset
+
+    def filter_tags(self, queryset, name, value):
+        if value:
+            return queryset.filter(tags__slug=value).distinct()
         return queryset
 
 
@@ -51,3 +59,11 @@ class SubscriptionFilter(django_filters.FilterSet):
                 recipes_count__lte=value
             )
         return queryset
+
+
+class IngredientFilter(django_filters.FilterSet):
+    name = django_filters.CharFilter(lookup_expr='icontains')
+
+    class Meta:
+        model = Ingredient
+        fields = ['name']
