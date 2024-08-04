@@ -105,9 +105,6 @@ class Tag(models.Model):
         validators=[validators.validate_slug]
     )
 
-    def recipe__count(self):
-        return self.recipes.count()
-
     class Meta:
         ordering = ('name',)
         verbose_name = 'Тэг'
@@ -213,7 +210,7 @@ class UserRecipeRelation(models.Model):
         Recipe,
         on_delete=models.CASCADE,
         verbose_name='Рецепт',
-        related_name='%(class)s_recipe'
+        related_name='%(class)s_set'
     )
 
     class Meta:
