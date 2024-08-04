@@ -14,7 +14,8 @@ def generate_shopping_list_text(ingredient_quantities, shopping_cart):
     )
     recipe_header = 'Рецепты:'
     recipes_list = '\n'.join(
-        [f'{index}. {cart.recipe.name}' for index, cart in enumerate(shopping_cart, start=1)]
+        [f'{index}. {cart.recipe.name}' for index, cart
+         in enumerate(shopping_cart, start=1)]
     )
 
     return '\n'.join([header, product_header, products,
