@@ -9,7 +9,7 @@ def validate_username(username):
         raise ValidationError(
             f"Username cannot be '{settings.AUTH_USER_PATH}'."
         )
-    invalid_chars = re.findall(r'^[\w.@+-]+\z', username)
+    invalid_chars = re.findall(r'[^\\w.@+-]', username)
     if invalid_chars:
         raise ValidationError(
             f"Username contains invalid characters:"

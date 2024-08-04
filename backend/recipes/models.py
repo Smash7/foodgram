@@ -155,12 +155,6 @@ class Recipe(models.Model):
         ordering = ('name',)
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
-    #
-    # def is_favorited(self, user):
-    #     return self.recipe_favorites.filter(user=user).exists()
-    #
-    # def is_in_shopping_cart(self, user):
-    #     return self.recipes_in_shopping_cart.filter(user=user).exists()
 
 
 class RecipeIngredient(models.Model):
@@ -185,12 +179,6 @@ class RecipeIngredient(models.Model):
         ordering = ('recipe__name',)
         verbose_name = 'Ингредиент рецепта'
         verbose_name_plural = 'Ингредиенты рецепта'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['recipe', 'ingredient'],
-                name='unique_recipe_ingredient'
-            )
-        ]
 
     def __str__(self):
         return f'{self.ingredient} в {self.recipe}'

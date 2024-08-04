@@ -39,10 +39,11 @@ class SimpleRecipeSerializer(serializers.ModelSerializer):
 
 class SubscriptionSerializer(ProfileSerializer):
     recipes = serializers.SerializerMethodField()
+    recipe_count = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = (*ProfileSerializer.Meta.fields, 'recipe_count')
+        fields = (*ProfileSerializer.Meta.fields, 'recipe_count', 'recipes')
 
     def get_recipes(self, recipes_obj):
         request = self.context.get('request')
@@ -52,6 +53,9 @@ class SubscriptionSerializer(ProfileSerializer):
             )], many=True,
             context={'request': request}
         ).data
+
+    def get_recipe_count(self, obj):
+        return obj.recipes.count()
 
 
 class AvatarSerializer(serializers.ModelSerializer):
@@ -124,7 +128,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         for item in obj:
             if isinstance(item, dict):
                 item = item.get('ingredient').get('id')
-            if item in item_count:
+            if item.name in item_count:
                 item_count[item.name] += 1
             else:
                 item_count[item.name] = 1
@@ -197,11 +201,12 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, recipe):
         request = self.context.get('request', None)
-        return (request and request.user.is_authenticated
-                and recipe.is_favorited(request.user))
+        if request and request.user.is_authenticated:
+            return FavoriteRecipe.objects.filter(user=request.user, recipe=recipe).exists()
+        return False
 
     def get_is_in_shopping_cart(self, recipe):
         request = self.context.get('request', None)
         if request and request.user.is_authenticated:
-            return recipe.is_in_shopping_cart(request.user)
+            return ShoppingCart.objects.filter(user=request.user, recipe=recipe).exists()
         return False
