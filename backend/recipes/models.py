@@ -89,6 +89,9 @@ class Ingredient(models.Model):
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
 
+    def __str__(self):
+        return self.name
+
 
 class Tag(models.Model):
     name = models.CharField(
@@ -109,6 +112,9 @@ class Tag(models.Model):
         ordering = ('name',)
         verbose_name = 'Тэг'
         verbose_name_plural = 'Тэги'
+
+    def __str__(self):
+        return self.name
 
 
 class Recipe(models.Model):

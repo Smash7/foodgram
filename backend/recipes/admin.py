@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.contrib import admin
 from django.db.models import Count
 from django.utils.safestring import mark_safe
@@ -20,8 +19,7 @@ class HasRecipesFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         value = self.value()
         if value in ('yes', 'no'):
-            isnull_value = value == 'no'
-            return queryset.filter(recipes__isnull=isnull_value).distinct()
+            return queryset.filter(recipes__isnull=value == 'no').distinct()
         return queryset
 
 
@@ -68,7 +66,7 @@ class FoodgramUserAdmin(admin.ModelAdmin):
         'is_staff', 'is_active', 'get_recipe_count',
         'get_subscription_count', 'get_follower_count'
     )
-    search_fields = ('id', 'username', 'email', 'first_name', 'last_name')
+    search_fields = ('username', 'email', 'first_name', 'last_name')
     list_filter = (HasRecipesFilter, HasSubscriptionsFilter,
                    HasFollowersFilter)
     empty_value_display = '-пусто-'
@@ -84,34 +82,29 @@ class FoodgramUserAdmin(admin.ModelAdmin):
     )
 
     def get_queryset(self, request):
-        queryset = super().get_queryset(request)
-        queryset = queryset.annotate(
+        return super().get_queryset(request).annotate(
             recipe_count=Count('recipes'),
             subscription_count=Count('authors'),
             follower_count=Count('followers')
         )
-        return queryset
 
-    def get_recipe_count(self, obj):
-        return obj.recipe_count
+    @admin.display(description='Количество рецептов')
+    def get_recipe_count(self, user):
+        return user.recipe_count
 
-    get_recipe_count.short_description = 'Количество рецептов'
+    @admin.display(description='Количество подписок')
+    def get_subscription_count(self, user):
+        return user.subscription_count
 
-    def get_subscription_count(self, obj):
-        return obj.subscription_count
-
-    get_subscription_count.short_description = 'Количество подписок'
-
-    def get_follower_count(self, obj):
-        return obj.follower_count
-
-    get_follower_count.short_description = 'Количество подписчиков'
+    @admin.display(description='Количество подписчиков')
+    def get_follower_count(self, user):
+        return user.follower_count
 
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'slug', 'recipe__count')
-    search_fields = ('id', 'name', 'slug')
+    search_fields = ('name', 'slug')
     empty_value_display = '-пусто-'
 
 
@@ -126,11 +119,9 @@ class IsIngredientUsedFilter(admin.SimpleListFilter):
         )
 
     def queryset(self, request, queryset):
-        value = self.value()
-        if value in ('yes', 'no'):
-            isnull_value = value == 'no'
+        if self.value() in ('yes', 'no'):
             return queryset.filter(
-                recipe_ingredients__isnull=isnull_value
+                recipe_ingredients__isnull=self.value() == 'no'
             ).distinct()
         return queryset
 
@@ -138,7 +129,7 @@ class IsIngredientUsedFilter(admin.SimpleListFilter):
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'measurement_unit', 'recipes')
-    search_fields = ('id', 'name', 'measurement_unit')
+    search_fields = ('name', 'measurement_unit')
     list_filter = (IsIngredientUsedFilter,)
     empty_value_display = '-пусто-'
 
@@ -152,7 +143,7 @@ class CookingTimeFilter(admin.SimpleListFilter):
         return (
             (
                 label, constants.COOKING_TIME_MEANS[label]
-                .format(self._count_recipes(
+                .format(self.count_recipes(
                     request,
                     *constants.COOKING_TIME_RANGE[label]
                 ))
@@ -160,52 +151,53 @@ class CookingTimeFilter(admin.SimpleListFilter):
             for label in labels)
 
     def queryset(self, request, queryset):
-        value = self.value()
-        if not constants.COOKING_TIME_RANGE.get(value):
+        time_range = constants.COOKING_TIME_RANGE.get(self.value())
+        if not time_range:
             return queryset
-        return queryset.filter(
-            cooking_time__range=constants.COOKING_TIME_RANGE[value]
-        )
+        return self.filter_by_cooking_time(queryset, *time_range)
 
-    def _count_recipes(self, request, min_time, max_time):
-        return self.queryset(request, Recipe.objects.filter(
-            cooking_time__range=(min_time, max_time)
-        )).count()
+    def count_recipes(self, request, min_time, max_time):
+        return self.filter_by_cooking_time(
+            self.queryset(request, Recipe.objects.all()), min_time, max_time
+        ).count()
 
-
-class RecipeAuthorFilter(admin.SimpleListFilter):
-    title = 'Автор рецепта'
-    parameter_name = 'author'
-
-    def lookups(self, request, model_admin):
-        return (
-            (author.id, author.username)
-            for author in FoodgramUser.objects.filter(recipes__isnull=False)
-            .distinct()
-        )
-
-    def queryset(self, request, queryset):
-        value = self.value()
-        if value:
-            return queryset.filter(author_id=value)
-        return queryset
+    def filter_by_cooking_time(self, queryset, min_time, max_time):
+        return queryset.filter(cooking_time__range=(min_time, max_time))
 
 
-class RecipeTagFilter(admin.SimpleListFilter):
-    title = 'Тег рецепта'
-    parameter_name = 'tag'
-
-    def lookups(self, request, model_admin):
-        return (
-            (tag.id, tag.name)
-            for tag in Tag.objects.filter(recipes__isnull=False).distinct()
-        )
-
-    def queryset(self, request, queryset):
-        value = self.value()
-        if value:
-            return queryset.filter(tags__id=value)
-        return queryset
+# class RecipeAuthorFilter(admin.SimpleListFilter):
+#     title = 'Автор рецепта'
+#     parameter_name = 'author'
+#
+#     def lookups(self, request, model_admin):
+#         return (
+#             (author.id, author.username)
+#             for author in FoodgramUser.objects.filter(recipes__isnull=False)
+#             .distinct()
+#         )
+#
+#     def queryset(self, request, queryset):
+#         value = self.value()
+#         if value:
+#             return queryset.filter(author_id=value)
+#         return queryset
+#
+#
+# class RecipeTagFilter(admin.SimpleListFilter):
+#     title = 'Тег рецепта'
+#     parameter_name = 'tag'
+#
+#     def lookups(self, request, model_admin):
+#         return (
+#             (tag.id, tag.name)
+#             for tag in Tag.objects.filter(recipes__isnull=False).distinct()
+#         )
+#
+#     def queryset(self, request, queryset):
+#         value = self.value()
+#         if value:
+#             return queryset.filter(tags__id=value)
+#         return queryset
 
 
 @admin.register(Recipe)
@@ -214,28 +206,31 @@ class RecipeAdmin(admin.ModelAdmin):
                     'cooking_time', 'tag_list', 'ingredient_list')
     search_fields = ('id', 'author__username', 'name',
                      'cooking_time', 'tags__name')
-    list_filter = (CookingTimeFilter, RecipeAuthorFilter, RecipeTagFilter)
+    list_filter = (CookingTimeFilter, 'tags', 'author', 'ingredients')
     empty_value_display = '-пусто-'
     filter_horizontal = ('tags', 'ingredients')
 
+    @mark_safe
     @admin.display(description='Ингредиенты')
     def ingredient_list(self, recipe):
-        return mark_safe('<br>'.join(
-            f'{ingredient.name}'
-            f''' {ingredient.recipe_ingredients
-            .filter(recipe=recipe).first().amount}'''
-            f' {ingredient.measurement_unit}'
-            for ingredient in recipe.ingredients.all()
+        ingredients = (recipe.recipe_ingredients
+                       .select_related('ingredient').all())
+        return ('<br>'.join(
+            f'{ingredient.ingredient.name} {ingredient.amount}'
+            f' {ingredient.ingredient.measurement_unit}'
+            for ingredient in ingredients
         ))
 
+    @mark_safe
     @admin.display(description='Тэги')
-    def tag_list(self, obj):
-        return mark_safe('<br>'.join(tag.name for tag in obj.tags.all()))
+    def tag_list(self, recipe):
+        return '<br>'.join(tag.name for tag in recipe.tags.all())
 
+    @mark_safe
     @admin.display(description='Изображение')
-    def image_tag(self, obj):
-        if obj.image:
-            return mark_safe(
-                f'<img src="{obj.image.url}" style="max-height: 100px;'
+    def image_tag(self, recipe):
+        if recipe.image:
+            return (
+                f'<img src="{recipe.image.url}" style="max-height: 100px;'
                 ' max-width: 100px;" />')
         return '-'
