@@ -21,6 +21,7 @@ class RecipeFilter(django_filters.rest_framework.FilterSet):
         conjoined=False,
 
     )
+
     class Meta:
         model = Recipe
         fields = ['tags', 'author', 'is_favorited', 'is_in_shopping_cart']
