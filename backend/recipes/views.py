@@ -1,6 +1,5 @@
 from django.shortcuts import get_object_or_404, redirect, reverse
 from rest_framework.views import View
-from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from .models import Recipe
 

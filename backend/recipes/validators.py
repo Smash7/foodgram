@@ -16,6 +16,7 @@ def validate_username(username):
             f" {''.join(set(invalid_chars))}"
         )
 
+
 def validate_slug(slug):
     invalid_chars = re.findall(r'^[-a-zA-Z0-9_]+$', slug)
     if invalid_chars:
