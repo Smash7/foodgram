@@ -5,7 +5,7 @@ Foodgram - это веб-приложение для публикации рец
 ## Автор
 
 - **ФИО**: Мартынов Евгений Алексеевич
-- [LinkedIn](https://www.linkedin.com/in/eugene-martynov/)
+  - [GitHub](https://github.com/Smash7/)
 
 ## Техно-стек
 
@@ -18,7 +18,7 @@ Foodgram - это веб-приложение для публикации рец
 - Gunicorn
 - React
 
-## Команды локального развертывания
+## Запуск c Docker Compose
 
 ### Клонирование репозитория
 
@@ -40,8 +40,6 @@ POSTGRES_PASSWORD=your_db_password
 DB_HOST=db
 DB_PORT=5432
 ```
-
-### Запуск Docker Compose
 
 Перейдите в папку `infra` и выполните команду для запуска контейнеров:
 
@@ -101,12 +99,32 @@ docker-compose down
 
 ## Запуск без Docker
 
-### Установка зависимостей
-
-Перейдите в папку `backend` и установите зависимости:
+### Клонирование репозитория
 
 ```bash
-cd backend
+git clone https://github.com/Smash7/foodgram.git
+cd foodgram
+```
+
+### Создание .env файла
+
+Перейдите в папку `backend` и добавьте в него следующие переменные окружения:
+
+```env
+DJANGO_SECRET_KEY=your_secret_key
+DB_ENGINE=sqlite # or postgres
+DB_NAME=your_db_name
+POSTGRES_USER=your_db_user
+POSTGRES_PASSWORD=your_db_password
+DB_HOST=db
+DB_PORT=5432
+```
+
+### Установка зависимостей
+
+Установите зависимости:
+
+```bash
 pip install -r requirements.txt
 ```
 
@@ -116,7 +134,6 @@ pip install -r requirements.txt
 
 ```bash
 python manage.py migrate
-python manage.py collectstatic --noinput
 ```
 
 ### Загрузка ингредиентов в базу данных
@@ -127,11 +144,17 @@ python manage.py collectstatic --noinput
 python manage.py import_ingredients
 ```
 
-Эта команда запустит пользовательскую команду Django, которая загрузит данные из файла `data/ingredients.json` в базу данных.
+### Загрузка тегов в базу данных
+
+Для загрузки данных тегов из файла tags.json, выполните следующую команду:
+
+```bash
+python manage.py import_tags
+```
 
 ### Создание суперпользователя
 
-Создайте суперпользователя для доступа к админ панели:
+Создайте суперпользователя:
 
 ```bash
 python manage.py createsuperuser
@@ -148,3 +171,5 @@ python manage.py runserver
 ### Доступ к приложению
 
 - **API**: [http://localhost:8000/api/](http://localhost:8000/api/)
+- **Админ панель**: [http://localhost:8000/admin/](http://localhost:8000/admin/)
+- **ReDoc**: [http://localhost:8000/redoc/](http://localhost:8000/redoc/)
