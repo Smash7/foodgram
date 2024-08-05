@@ -14,9 +14,11 @@ djangorestframework==3.12.4
 djangorestframework-simplejwt==4.8.0
 djoser==2.1.0
 drf-extra-fields==3.0.2
+drf-yasg==1.21.7
 flake8==6.0.0
 flake8-isort==6.0.0
 idna==3.7
+inflection==0.5.1
 iniconfig==2.0.0
 isort==5.13.2
 itypes==1.2.0

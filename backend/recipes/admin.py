@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.urls import reverse
 from django.db.models import Count
 from django.utils.safestring import mark_safe
 
@@ -19,7 +20,8 @@ class HasRecipesFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         value = self.value()
         if value in ('yes', 'no'):
-            return queryset.filter(recipes__isnull=value == 'no').distinct()
+            return (queryset.filter(recipes__isnull=value == 'no')
+                    .distinct())
         return queryset
 
 
@@ -36,8 +38,8 @@ class HasSubscriptionsFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         value = self.value()
         if value in ('yes', 'no'):
-            isnull_value = value == 'no'
-            return queryset.filter(followers__isnull=isnull_value).distinct()
+            return (queryset.filter(followers__isnull=value == 'no')
+                    .distinct())
         return queryset
 
 
@@ -54,8 +56,8 @@ class HasFollowersFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         value = self.value()
         if value in ('yes', 'no'):
-            isnull_value = value == 'no'
-            return queryset.filter(authors__isnull=isnull_value).distinct()
+            return (queryset.filter(authors__isnull=value == 'no')
+                    .distinct())
         return queryset
 
 
@@ -88,9 +90,15 @@ class FoodgramUserAdmin(admin.ModelAdmin):
             follower_count=Count('followers')
         )
 
+    @mark_safe
     @admin.display(description='Рецепты')
-    def get_recipe_count(self, user):
-        return user.recipe_count
+    def get_recipe_count(self, obj):
+        count = obj.recipe_count
+        if count > 0:
+            url = (reverse('admin:recipes_recipe_changelist')
+                   + f'?author__id__exact={obj.id}')
+            return f'<a href="{url}">{count}</a>'
+        return count
 
     @admin.display(description='Подписки')
     def get_subscription_count(self, user):
@@ -107,6 +115,7 @@ class TagAdmin(admin.ModelAdmin):
     search_fields = ('name', 'slug')
     empty_value_display = '-пусто-'
 
+    @admin.display(description='Рецепты')
     def get_recipe_count(self, tag):
         return tag.recipes.count()
 
@@ -122,9 +131,10 @@ class IsIngredientUsedFilter(admin.SimpleListFilter):
         )
 
     def queryset(self, request, queryset):
-        if self.value() in ('yes', 'no'):
+        value = self.value()
+        if value in ('yes', 'no'):
             return queryset.filter(
-                recipe_ingredients__isnull=self.value() == 'no'
+                recipe_ingredients__isnull=value == 'no'
             ).distinct()
         return queryset
 
@@ -141,28 +151,38 @@ class CookingTimeFilter(admin.SimpleListFilter):
     title = 'Время приготовления'
     parameter_name = 'cooking_time'
 
+    COOKING_TIME_RANGE = {
+        'fast': (0, constants.LOWER_COOKING_TIME_TRESHOLD),
+        'medium': (constants.LOWER_COOKING_TIME_TRESHOLD,
+                   constants.UPPER_COOKING_TIME_TRESHOLD),
+        'long': (constants.UPPER_COOKING_TIME_TRESHOLD, 10 ** 10)
+    }
+    COOKING_TIME_MEANS = {
+        'fast': f'быстрее {constants.LOWER_COOKING_TIME_TRESHOLD} минут'
+                + ' ({})',
+        'medium': f'быстрее {constants.UPPER_COOKING_TIME_TRESHOLD} минут'
+                  + ' ({})',
+        'long': f'дольше {constants.UPPER_COOKING_TIME_TRESHOLD} минут'
+                + ' ({})'
+    }
+
     def lookups(self, request, model_admin):
-        labels = constants.COOKING_TIME_RANGE.keys()
+        labels = self.COOKING_TIME_RANGE.keys()
         return (
             (
-                label, constants.COOKING_TIME_MEANS[label]
-                .format(self.count_recipes(
-                    request,
-                    *constants.COOKING_TIME_RANGE[label]
-                ))
-            )
-            for label in labels)
+                label, self.COOKING_TIME_MEANS[label]
+                .format(self.filter_by_cooking_time(
+                    self.queryset(request, Recipe.objects.all()),
+                    *self.COOKING_TIME_RANGE[label]
+                ).count())
+            ) for label in labels
+        )
 
     def queryset(self, request, queryset):
-        time_range = constants.COOKING_TIME_RANGE.get(self.value())
+        time_range = self.COOKING_TIME_RANGE.get(self.value())
         if not time_range:
             return queryset
         return self.filter_by_cooking_time(queryset, *time_range)
-
-    def count_recipes(self, request, min_time, max_time):
-        return self.filter_by_cooking_time(
-            self.queryset(request, Recipe.objects.all()), min_time, max_time
-        ).count()
 
     def filter_by_cooking_time(self, queryset, min_time, max_time):
         return queryset.filter(cooking_time__range=(min_time, max_time))
@@ -183,11 +203,11 @@ class RecipeAdmin(admin.ModelAdmin):
     def ingredient_list(self, recipe):
         ingredients = (recipe.recipe_ingredients
                        .select_related('ingredient').all())
-        return ('<br>'.join(
+        return '<br>'.join(
             f'{ingredient.ingredient.name} {ingredient.amount}'
             f' {ingredient.ingredient.measurement_unit}'
             for ingredient in ingredients
-        ))
+        )
 
     @mark_safe
     @admin.display(description='Тэги')

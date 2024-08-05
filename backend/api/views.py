@@ -98,13 +98,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_fields = ('tags__slug', 'author__username',
                         'is_favorited', 'is_in_shopping_cart')
 
-    def add_recipe_to_basket(self, request, pk, model):
+    def post_delete_recipe_to_basket(self, request, pk, model):
         recipe = get_object_or_404(Recipe, pk=pk)
         if request.method == 'POST':
-            obj, created = model.objects.get_or_create(user=request.user,
-                                                       recipe=recipe)
+            _, created = model.objects.get_or_create(user=request.user,
+                                                     recipe=recipe)
             if not created:
-                raise ValidationError('This recipe is already in your list.')
+                raise ValidationError('Рецепт уже добавлен в корзину.')
             return Response(
                 SimpleRecipeSerializer(recipe,
                                        context={'request': request}).data,
@@ -118,13 +118,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated], url_path='favorite',
             url_name='favorite')
     def favorite(self, request, pk=None):
-        return self.add_recipe_to_basket(request, pk, FavoriteRecipe)
+        return self.post_delete_recipe_to_basket(request, pk, FavoriteRecipe)
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthenticated], url_path='shopping_cart',
             url_name='shopping_cart')
     def shopping_cart(self, request, pk=None):
-        return self.add_recipe_to_basket(request, pk, ShoppingCart)
+        return self.post_delete_recipe_to_basket(request, pk, ShoppingCart)
 
     def generate_shopping_list(self, user):
         shopping_cart = ShoppingCart.objects.filter(user=user).all()
@@ -158,8 +158,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_link(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
         short_link = request.build_absolute_uri(reverse(
-            'shortener:short-link-redirect',
-            args=[recipe.short_url_hash]
+            'recipes:short-link-redirect',
+            args=[recipe.pk]
         ))
         return Response({'short-link': short_link})
 

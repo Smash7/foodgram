@@ -1,10 +1,8 @@
 from django.shortcuts import get_object_or_404, redirect
-from rest_framework.views import View
 
 from .models import Recipe
 
 
-class ShortUrlView(View):
-    def get(self, request, short_url_hash):
-        recipe = get_object_or_404(Recipe, short_url_hash=short_url_hash)
-        return redirect('api:recipe-detail', pk=recipe.pk)
+def short_url_redirect(request, pk):
+    recipe = get_object_or_404(Recipe, pk=pk)
+    return redirect('api:recipe-detail', pk=recipe.pk)
