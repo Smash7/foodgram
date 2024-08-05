@@ -135,7 +135,7 @@ class RecipeSerializer(serializers.ModelSerializer):
                 field_name: f'Рецепт должен содержать хотя бы один элемент'
                             f' "{field_name}".'
             })
-        ids = [item['id'] for item in tags_or_ingredients]
+        ids = [item.id for item in tags_or_ingredients]
         if len(ids) != model_class.objects.filter(id__in=ids).count():
             raise serializers.ValidationError({
                 field_name: f'Некоторые элементы в "{field_name}"'

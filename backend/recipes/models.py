@@ -13,7 +13,7 @@ class FoodgramUser(AbstractUser):
     username = models.CharField(
         max_length=150,
         unique=True,
-        verbose_name='Имя пользователя',
+        verbose_name='Юзернейм',
         validators=[validators.validate_username]
     )
     email = models.EmailField(
@@ -77,7 +77,7 @@ class Subscription(models.Model):
 class Ingredient(models.Model):
     name = models.CharField(
         max_length=128,
-        verbose_name='Название ингредиента',
+        verbose_name='Название',
     )
     measurement_unit = models.CharField(
         max_length=64,
@@ -96,12 +96,12 @@ class Ingredient(models.Model):
 class Tag(models.Model):
     name = models.CharField(
         max_length=32,
-        verbose_name='Название тэга'
+        verbose_name='Название'
     )
     slug = models.SlugField(
         max_length=32,
         unique=True,
-        verbose_name='Slug'
+        verbose_name='Слаг'
     )
 
     class Meta:
@@ -122,7 +122,7 @@ class Recipe(models.Model):
     )
     name = models.CharField(
         max_length=256,
-        verbose_name='Название рецепта',
+        verbose_name='Название',
     )
     image = models.ImageField(
         upload_to='recipes/',
@@ -139,37 +139,18 @@ class Recipe(models.Model):
     )
     tags = models.ManyToManyField(
         Tag,
-        verbose_name='Тэги рецепта',
+        verbose_name='Тэги',
         related_name='recipes'
     )
     cooking_time = models.PositiveIntegerField(
         verbose_name='Время приготовления (минуты)',
         validators=[MinValueValidator(constants.MIN_COOKING_TIME)]
     )
-    short_url_hash = models.CharField(
-        max_length=8,
-        unique=True,
-        verbose_name='Короткая ссылка',
-        blank=True,
-        null=True
-    )
 
     class Meta:
         ordering = ('name',)
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
-
-    def save(self, *args, **kwargs):
-        if not self.short_url_hash:
-            self.short_url_hash = self.generate_short_url_hash()
-        super().save(*args, **kwargs)
-
-    def generate_short_url_hash(self):
-        import hashlib
-        hash_value = hashlib.md5(str(self.id).encode()).hexdigest()[:8]
-        while Recipe.objects.filter(short_url_hash=hash_value).exists():
-            hash_value = hashlib.md5(str(hash_value).encode()).hexdigest()[:8]
-        return hash_value
 
     def __str__(self):
         return self.name
@@ -207,13 +188,13 @@ class UserRecipeRelation(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         verbose_name='Пользователь',
-        related_name='%(class)s_user'
+        related_name='%(class)ss'
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
         verbose_name='Рецепт',
-        related_name='%(class)s_set'
+        related_name='%(class)ss'
     )
 
     class Meta:
