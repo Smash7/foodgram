@@ -47,10 +47,10 @@ class SubscriptionSerializer(ProfileSerializer):
         model = User
         fields = (*ProfileSerializer.Meta.fields, 'recipe_count', 'recipes')
 
-    def get_recipes(self, recipes_obj):
+    def get_recipes(self, recipes_queryset):
         request = self.context.get('request')
         return SimpleRecipeSerializer(
-            recipes_obj.recipes.all()[:int(
+            recipes_queryset.recipes.all()[:int(
                 request.GET.get('recipes_limit', 10**10)
             )], many=True,
             context={'request': request}
@@ -125,17 +125,30 @@ class RecipeSerializer(serializers.ModelSerializer):
                             'id', 'author')
 
     @staticmethod
-    def tags_or_ingredients_validation(tags_or_ingredients, field_name):
+    def tags_or_ingredients_validation(
+            tags_or_ingredients,
+            field_name,
+            model_class
+    ):
         if not tags_or_ingredients:
-            raise serializers.ValidationError(
-                f'Рецепт должен содержать хотя бы один элемент "{field_name}".'
-            )
-        if [item.name for item, count
-                in Counter(tags_or_ingredients).items() if count > 1]:
-            raise serializers.ValidationError(
-                {field_name: 'Ингредиенты не должны'
-                             ' дублироваться в одном рецепте.'}
-            )
+            raise serializers.ValidationError({
+                field_name: f'Рецепт должен содержать хотя бы один элемент'
+                            f' "{field_name}".'
+            })
+        ids = [item['id'] for item in tags_or_ingredients]
+        if len(ids) != model_class.objects.filter(id__in=ids).count():
+            raise serializers.ValidationError({
+                field_name: f'Некоторые элементы в "{field_name}"'
+                            f' не существуют.'
+            })
+
+        duplicates = [item_id for item_id, count in Counter(ids).items()
+                      if count > 1]
+        if duplicates:
+            raise serializers.ValidationError({
+                field_name: f'Элементы не должны дублироваться'
+                            f' в одном рецепте: {duplicates}.'
+            })
 
     def validate_image(self, image):
         if not image:
@@ -146,11 +159,11 @@ class RecipeSerializer(serializers.ModelSerializer):
         self.tags_or_ingredients_validation(
             [ingredient.get('ingredient').get('id')
              for ingredient in ingredients],
-            'ingredients')
+            'ingredients', Ingredient)
         return ingredients
 
     def validate_tags(self, tags):
-        self.tags_or_ingredients_validation(tags, 'tags')
+        self.tags_or_ingredients_validation(tags, 'tags', Tag)
         return tags
 
     def to_representation(self, instance):
@@ -190,7 +203,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
     def get_is_favorited(self, recipe):
-        request = self.context.get('request', None)
+        request = self.context.get('request')
         return (request
                 and request.user.is_authenticated
                 and FavoriteRecipe.objects.filter(user=request.user,
