@@ -101,7 +101,7 @@ class Tag(models.Model):
     slug = models.SlugField(
         max_length=32,
         unique=True,
-        verbose_name='Псевдоним'
+        verbose_name='Ярлык'
     )
 
     class Meta:
