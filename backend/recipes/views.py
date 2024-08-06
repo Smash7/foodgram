@@ -1,8 +1,10 @@
-from django.shortcuts import get_object_or_404, redirect
+from django.http import Http404
+from django.shortcuts import redirect
 
 from .models import Recipe
 
 
 def short_url_redirect(request, pk):
-    recipe = get_object_or_404(Recipe, pk=pk)
-    return redirect('api:recipe-detail', pk=recipe.pk)
+    if not Recipe.objects.filter(pk=pk).exists():
+        raise Http404("Recipe does not exist")
+    return redirect('api:recipe-detail', pk=pk)
