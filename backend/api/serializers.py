@@ -142,7 +142,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         if missing_names:
             raise serializers.ValidationError({
                 field_name: f'Некоторые элементы не существуют:'
-                            f' {", ".join(missing_names)}.'
+                            f' {missing_names}.'
             })
 
         duplicates = [item_id for item_id, count in Counter(names).items()
