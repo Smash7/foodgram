@@ -1,10 +1,11 @@
 from django.contrib import admin
-from django.urls import reverse
+from django.contrib.auth.models import Group
 from django.db.models import Count
+from django.urls import reverse
 from django.utils.safestring import mark_safe
 
 from . import constants
-from .models import FoodgramUser, Ingredient, Recipe, Tag
+from . import models
 
 
 class HasRecipesFilter(admin.SimpleListFilter):
@@ -61,7 +62,7 @@ class HasFollowersFilter(admin.SimpleListFilter):
         return queryset
 
 
-@admin.register(FoodgramUser)
+@admin.register(models.FoodgramUser)
 class FoodgramUserAdmin(admin.ModelAdmin):
     list_display = (
         'id', 'username', 'email', 'first_name', 'last_name',
@@ -109,7 +110,7 @@ class FoodgramUserAdmin(admin.ModelAdmin):
         return user.follower_count
 
 
-@admin.register(Tag)
+@admin.register(models.Tag)
 class TagAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'slug', 'get_recipe_count')
     search_fields = ('name', 'slug')
@@ -145,12 +146,22 @@ class IsIngredientUsedFilter(admin.SimpleListFilter):
         return queryset
 
 
-@admin.register(Ingredient)
+@admin.register(models.Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'measurement_unit', 'recipes')
+    list_display = ('id', 'name', 'measurement_unit', 'get_recipe_count')
     search_fields = ('name', 'measurement_unit')
     list_filter = (IsIngredientUsedFilter,)
     empty_value_display = '-пусто-'
+
+    @mark_safe
+    @admin.display(description='Количество рецептов')
+    def get_recipe_count(self, ingredient):
+        count = ingredient.recipes.count()
+        if count == 0:
+            return count
+        url = (reverse('admin:recipes_recipe_changelist')
+               + f'?ingredients__id__exact={ingredient.id}')
+        return f'<a href="{url}">{count}</a>'
 
 
 class CookingTimeFilter(admin.SimpleListFilter):
@@ -178,7 +189,7 @@ class CookingTimeFilter(admin.SimpleListFilter):
             (
                 label, self.COOKING_TIME_MEANS[label]
                 .format(self.filter_by_cooking_time(
-                    self.queryset(request, Recipe.objects.all()),
+                    self.queryset(request, models.Recipe.objects.all()),
                     *self.COOKING_TIME_RANGE[label]
                 ).count())
             ) for label in labels
@@ -194,7 +205,7 @@ class CookingTimeFilter(admin.SimpleListFilter):
         return queryset.filter(cooking_time__range=(min_time, max_time))
 
 
-@admin.register(Recipe)
+@admin.register(models.Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('id', 'author', 'name', 'image_tag',
                     'cooking_time', 'tag_list', 'ingredient_list')
@@ -228,3 +239,66 @@ class RecipeAdmin(admin.ModelAdmin):
                 f'<img src="{recipe.image.url}" style="max-height: 100px;'
                 ' max-width: 100px;" />')
         return '-'
+
+
+class UsedIngredientFilter(admin.SimpleListFilter):
+    title = 'Использованные ингредиенты'
+    parameter_name = 'used_in_recipes'
+
+    def lookups(self, request, model_admin):
+        used_ingredients = (
+            models.RecipeIngredient.objects
+            .values('ingredient__id', 'ingredient__name')
+            .annotate(recipe_count=Count('recipe'))
+            .filter(recipe_count__gt=0)
+            .order_by('ingredient__name')
+        )
+
+        return [
+            (
+                ingredient['ingredient__id'],
+                f"{ingredient['ingredient__name']}"
+                f" ({ingredient['recipe_count']})"
+            )
+            for ingredient in used_ingredients
+        ]
+
+    def queryset(self, request, queryset):
+        if not self.value():
+            return queryset
+        return queryset.filter(ingredient=self.value())
+
+
+@admin.register(models.RecipeIngredient)
+class RecipeIngredientAdmin(admin.ModelAdmin):
+    list_display = ('id', 'recipe', 'ingredient', 'amount')
+    search_fields = ('recipe__name', 'ingredient__name')
+    list_filter = ('recipe', UsedIngredientFilter)
+    empty_value_display = '-пусто-'
+
+
+@admin.register(models.ShoppingCart)
+class ShoppingCartAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'recipe')
+    search_fields = ('user__username', 'recipe__name')
+    list_filter = ('user',)
+    empty_value_display = '-пусто-'
+
+
+@admin.register(models.FavoriteRecipe)
+class FavoriteRecipeAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'recipe')
+    search_fields = ('user__username', 'recipe__name')
+    list_filter = ('user',)
+    empty_value_display = '-пусто-'
+
+
+@admin.register(models.Subscription)
+class SubscriptionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'author')
+    search_fields = ('user__username', 'author__username')
+    list_filter = ('user', 'author')
+    empty_value_display = '-пусто-'
+
+
+admin.site.unregister(Group)
