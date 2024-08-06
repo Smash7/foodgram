@@ -47,10 +47,10 @@ class SubscriptionSerializer(ProfileSerializer):
         model = User
         fields = (*ProfileSerializer.Meta.fields, 'recipe_count', 'recipes')
 
-    def get_recipes(self, recipes_queryset):
+    def get_recipes(self, user):
         request = self.context.get('request')
         return SimpleRecipeSerializer(
-            recipes_queryset.recipes.all()[:int(
+            user.recipes.all()[:int(
                 request.GET.get('recipes_limit', 10**10)
             )], many=True,
             context={'request': request}
@@ -132,17 +132,20 @@ class RecipeSerializer(serializers.ModelSerializer):
     ):
         if not tags_or_ingredients:
             raise serializers.ValidationError({
-                field_name: f'Рецепт должен содержать хотя бы один элемент'
-                            f' "{field_name}".'
+                field_name: 'Рецепт должен содержать хотя бы один элемент'
             })
-        ids = [item.id for item in tags_or_ingredients]
-        if len(ids) != model_class.objects.filter(id__in=ids).count():
+        names = {item.name for item in tags_or_ingredients}
+        existing_names = {model_class.objects.filter(name__in=names)
+                          .values_list('name', flat=True)}
+        missing_names = names - existing_names
+
+        if missing_names:
             raise serializers.ValidationError({
-                field_name: f'Некоторые элементы в "{field_name}"'
-                            f' не существуют.'
+                field_name: f'Некоторые элементы не существуют:'
+                            f' {", ".join(missing_names)}.'
             })
 
-        duplicates = [item_id for item_id, count in Counter(ids).items()
+        duplicates = [item_id for item_id, count in Counter(names).items()
                       if count > 1]
         if duplicates:
             raise serializers.ValidationError({
