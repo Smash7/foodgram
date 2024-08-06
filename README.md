@@ -132,7 +132,7 @@ pip install -r requirements.txt
 
 ### Применение миграций и сбор статики
 
-Примените миграции и соберите статику:
+Примените миграции:
 
 ```bash
 python manage.py migrate
@@ -151,7 +151,7 @@ python manage.py import_ingredients
 Для загрузки данных тегов из файла tags.json, выполните следующую команду:
 
 ```bash
-python manage.py import_tags
+python manage.py loaddata tags.json
 ```
 
 ### Создание суперпользователя
