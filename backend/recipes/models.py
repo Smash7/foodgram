@@ -101,7 +101,7 @@ class Tag(models.Model):
     slug = models.SlugField(
         max_length=32,
         unique=True,
-        verbose_name='Слаг'
+        verbose_name='Псевдоним'
     )
 
     class Meta:
@@ -187,18 +187,17 @@ class UserRecipeRelation(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        verbose_name='Пользователь',
-        related_name='%(class)ss'
+        verbose_name='Пользователь'
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        verbose_name='Рецепт',
-        related_name='%(class)ss'
+        verbose_name='Рецепт'
     )
 
     class Meta:
         abstract = True
+        default_related_name = '%(class)ss'
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'recipe'],
