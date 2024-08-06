@@ -92,11 +92,11 @@ class FoodgramUserAdmin(admin.ModelAdmin):
 
     @mark_safe
     @admin.display(description='Рецепты')
-    def get_recipe_count(self, obj):
-        count = obj.recipe_count
+    def get_recipe_count(self, user):
+        count = user.recipe_count
         if count > 0:
             url = (reverse('admin:recipes_recipe_changelist')
-                   + f'?author__id__exact={obj.id}')
+                   + f'?author__id__exact={user.id}')
             return f'<a href="{url}">{count}</a>'
         return count
 
@@ -115,9 +115,15 @@ class TagAdmin(admin.ModelAdmin):
     search_fields = ('name', 'slug')
     empty_value_display = '-пусто-'
 
+    @mark_safe
     @admin.display(description='Рецепты')
     def get_recipe_count(self, tag):
-        return tag.recipes.count()
+        count = tag.recipes.count()
+        if count == 0:
+            return count
+        url = (reverse('admin:recipes_recipe_changelist')
+               + f'?tags__id__exact={tag.id}')
+        return f'<a href="{url}">{count}</a>'
 
 
 class IsIngredientUsedFilter(admin.SimpleListFilter):
