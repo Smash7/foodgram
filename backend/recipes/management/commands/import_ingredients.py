@@ -20,8 +20,11 @@ class Command(BaseCommand):
 
         with open(file_path, 'r', encoding='utf-8') as file:
             data = json.load(file)
-            for item in data:
-                Ingredient.objects.create(
-                    name=item['name'],
-                    measurement_unit=item['measurement_unit']
-                )
+            ingredients = [
+                Ingredient(name=item['name'],
+                           measurement_unit=item['measurement_unit'])
+                for item in data
+            ]
+            Ingredient.objects.bulk_create(ingredients)
+
+        self.stdout.write(self.style.SUCCESS('Ингредиенты успешно импортированы'))
