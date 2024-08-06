@@ -1,7 +1,7 @@
 from django.utils import timezone
 
 
-def generate_shopping_list_text(ingredient_quantities, recipes_queryset):
+def generate_shopping_list_text(ingredient_quantities, recipes):
     date_created = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
     header = f'Список покупок составлен: {date_created}'
     product_header = 'Продукты:'
@@ -15,7 +15,7 @@ def generate_shopping_list_text(ingredient_quantities, recipes_queryset):
     recipe_header = 'Рецепты:'
     recipes_list = '\n'.join(
         [f'{index}. {cart.recipe.name}' for index, cart
-         in enumerate(recipes_queryset, start=1)]
+         in enumerate(recipes, start=1)]
     )
 
     return '\n'.join([header, product_header, products,
