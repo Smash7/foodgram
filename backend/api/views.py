@@ -109,7 +109,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_fields = ('tags__slug', 'author__username',
                         'is_favorited', 'is_in_shopping_cart')
 
-    def add_remove_recipe_to_basket(self, request, pk, model):
+    def add_remove_recipe_to_list(self, request, pk, model):
         recipe = get_object_or_404(Recipe, pk=pk)
         if request.method == 'POST':
             _, created = model.objects.get_or_create(user=request.user,
@@ -132,13 +132,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated], url_path='favorite',
             url_name='favorite')
     def favorite(self, request, pk=None):
-        return self.add_remove_recipe_to_basket(request, pk, FavoriteRecipe)
+        return self.add_remove_recipe_to_list(request, pk, FavoriteRecipe)
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[IsAuthenticated], url_path='shopping_cart',
             url_name='shopping_cart')
     def shopping_cart(self, request, pk=None):
-        return self.add_remove_recipe_to_basket(request, pk, ShoppingCart)
+        return self.add_remove_recipe_to_list(request, pk, ShoppingCart)
 
     def generate_shopping_list(self, user):
         shopping_cart = ShoppingCart.objects.filter(user=user).all()
