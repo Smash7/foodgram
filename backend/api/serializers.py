@@ -41,11 +41,11 @@ class SimpleRecipeSerializer(serializers.ModelSerializer):
 
 class SubscriptionSerializer(ProfileSerializer):
     recipes = serializers.SerializerMethodField()
-    recipe_count = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = (*ProfileSerializer.Meta.fields, 'recipe_count', 'recipes')
+        fields = (*ProfileSerializer.Meta.fields, 'recipes_count', 'recipes')
 
     def get_recipes(self, user):
         request = self.context.get('request')
@@ -56,7 +56,7 @@ class SubscriptionSerializer(ProfileSerializer):
             context={'request': request}
         ).data
 
-    def get_recipe_count(self, user):
+    def get_recipes_count(self, user):
         return user.recipes.count()
 
 
