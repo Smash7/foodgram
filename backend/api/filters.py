@@ -31,13 +31,13 @@ class RecipeFilter(django_filters.rest_framework.FilterSet):
         if not user.is_authenticated:
             return recipes
         if value:
-            return recipes.filter(favoriterecipe_recipe__user=user)
+            return recipes.filter(favoriterecipes__user=user)
         return recipes
 
     def filter_is_in_shopping_cart(self, queryset, name, value):
         user = self.request.user
         if value:
-            return queryset.filter(shoppingcart_recipe__user=user)
+            return queryset.filter(shoppingcarts__user=user)
         return queryset
 
     def filter_tags(self, queryset, name, value):
