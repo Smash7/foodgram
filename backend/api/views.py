@@ -21,7 +21,7 @@ from .permissions import IsOwnerOrReadOnly
 from .serializers import (
     AvatarSerializer, IngredientSerializer,
     ProfileSerializer, RecipeSerializer,
-    TagSerializer, SimpleRecipeSerializer
+    TagSerializer, SimpleRecipeSerializer, SubscriptionSerializer
 )
 from .utils import generate_shopping_list_text
 
@@ -54,13 +54,15 @@ class ProfileViewSet(djoser.views.UserViewSet):
 
     @action(detail=False, methods=['get'], url_path='subscriptions')
     def list_subscriptions(self, request):
-        subscriptions = self.get_queryset()
+        subscriptions = User.objects.filter(
+            id__in=Subscription.objects.filter(user=request.user).values_list('author_id', flat=True)
+        )
         page = self.paginate_queryset(subscriptions)
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
+            serializer = SubscriptionSerializer(page, many=True, context={'request': request})
             return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer(subscriptions, many=True)
+        serializer = SubscriptionSerializer(subscriptions, many=True, context={'request': request})
         return Response(serializer.data)
 
     @action(detail=True, methods=['post', 'delete'], url_path='subscribe')
