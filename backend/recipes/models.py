@@ -213,11 +213,11 @@ class UserRecipeRelation(models.Model):
 
 class FavoriteRecipe(UserRecipeRelation):
     class Meta(UserRecipeRelation.Meta):
-        verbose_name = 'Избранный рецепт'
+        verbose_name = 'Избранное'
         verbose_name_plural = 'Избранные рецепты'
 
 
 class ShoppingCart(UserRecipeRelation):
     class Meta(UserRecipeRelation.Meta):
-        verbose_name = 'Рецепт в корзине'
-        verbose_name_plural = 'Рецепты в корзине'
+        verbose_name = 'Список покупок'
+        verbose_name_plural = 'Списки покупок'

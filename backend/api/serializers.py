@@ -135,8 +135,8 @@ class RecipeSerializer(serializers.ModelSerializer):
                 field_name: 'Рецепт должен содержать хотя бы один элемент'
             })
         names = {item.name for item in tags_or_ingredients}
-        existing_names = {model_class.objects.filter(name__in=names)
-                          .values_list('name', flat=True)}
+        existing_names = set(model_class.objects.filter(name__in=names)
+                             .values_list('name', flat=True))
         missing_names = names - existing_names
 
         if missing_names:
