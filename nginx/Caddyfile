@@ -1,10 +1,6 @@
 https://ugin.dev {
     encode gzip
-    tls {
-        issuer acme {
-            ca https://acme-staging-v02.api.letsencrypt.org/directory
-        }
-    }
+    tls internal
 
     handle_path /api/* {
         reverse_proxy backend:8880
