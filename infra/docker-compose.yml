@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 volumes:
   pg_data:
@@ -14,14 +14,15 @@ services:
     command: cp -r /app/build/. /static/
     volumes:
       - static:/static
-  nginx:
+  caddy:
     container_name: foodgram-proxy
     image: smash7/foodgram_nginx:latest
     depends_on:
       - frontend
       - backend
     ports:
-      - "8800:80"
+      - "80:80"
+      - "443:443"
     networks:
       foodgram-network:
     volumes:
@@ -31,14 +32,14 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U foodgram_user -d foodgram_db" ]
+      test: ["CMD-SHELL", "pg_isready -U foodgram_user -d foodgram_db"]
       interval: 10s
       timeout: 5s
       retries: 5
     env_file:
       - .env
     networks:
-        foodgram-network:
+      foodgram-network:
   backend:
     image: smash7/foodgram_backend:latest
     env_file:
@@ -54,4 +55,3 @@ services:
       - static:/app/media
     networks:
       - foodgram-network
-

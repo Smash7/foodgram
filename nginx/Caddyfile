@@ -1,0 +1,31 @@
+https://ugin.dev {
+    encode gzip
+
+    handle_path /api/* {
+        reverse_proxy backend:8880
+    }
+
+    handle_path /admin/* {
+        reverse_proxy backend:8880
+    }
+
+    handle_path /s/* {
+        reverse_proxy backend:8880
+    }
+
+    handle_path /static_backend/* {
+        root * /static
+        file_server
+    }
+
+    handle_path /media/* {
+        root * /static
+        file_server
+    }
+
+    handle {
+        root * /static
+        try_files {path} {path}/ /index.html
+        file_server
+    }
+}

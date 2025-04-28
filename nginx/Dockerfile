@@ -1,3 +1,3 @@
-FROM nginx:1.22.1
+FROM caddy:2.7.6
 
-COPY nginx.conf /etc/nginx/templates/default.conf.template
+COPY Caddyfile /etc/caddy/Caddyfile
