@@ -41,11 +41,4 @@ https://ugin.dev {
         try_files {path} {path}/ /index.html
         file_server
     }
-    
-    # Ограничение размера тела
-    reverse_proxy {
-        transport http {
-            max_body_size 10MB
-        }
-    }
 }
