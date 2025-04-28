@@ -1,32 +1,51 @@
 https://ugin.dev {
     encode gzip
     tls internal
-
-    handle_path /api/* {
-        reverse_proxy backend:8880
-    }
-
-    handle_path /admin/* {
-        reverse_proxy backend:8880
-    }
-
-    handle_path /s/* {
-        reverse_proxy backend:8880
-    }
-
+    # Для точного соответствия nginx-алиасам
     handle_path /static_backend/* {
-        root * /static
+        rewrite * /static{path}
         file_server
     }
 
     handle_path /media/* {
-        root * /static
+        rewrite * /static{path}
         file_server
+    }
+
+    handle_path /api/docs/* {
+        root * /usr/share/nginx/html
+        try_files {path} {path}/redoc.html
+        file_server
+    }
+
+    handle_path /api/* {
+        reverse_proxy backend:8880 {
+            header_up Host {http.request.host}
+        }
+    }
+
+    handle_path /admin/* {
+        reverse_proxy backend:8880 {
+            header_up Host {http.request.host}
+        }
+    }
+
+    handle_path /s/* {
+        reverse_proxy backend:8880 {
+            header_up Host {http.request.host}
+        }
     }
 
     handle {
         root * /static
         try_files {path} {path}/ /index.html
         file_server
+    }
+    
+    # Ограничение размера тела
+    reverse_proxy {
+        transport http {
+            max_body_size 10MB
+        }
     }
 }
